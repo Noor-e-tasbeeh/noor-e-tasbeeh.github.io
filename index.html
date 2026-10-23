@@ -819,6 +819,14 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     </div>`;
   }
 
+  /* ================= Android app bridge (only inside the APK) ================= */
+  const NATIVE = (typeof window !== "undefined" && window.AndroidShare) ? window.AndroidShare : null;
+  const blobToB64 = (blob) => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(",")[1] || "");
+    r.onerror = rej; r.readAsDataURL(blob);
+  });
+
   /* ================= helpers ================= */
   const $ = (s, r = document) => r.querySelector(s);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -846,6 +854,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   }
   function vibrate(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
   async function copyText(text) {
+    if (NATIVE && NATIVE.copyText) { try { NATIVE.copyText(text); toast(t("کاپی ہو گیا", "Copied")); return true; } catch (e) {} }
     try { await navigator.clipboard.writeText(text); toast(t("کاپی ہو گیا", "Copied")); return true; }
     catch (e) { toast(t("کاپی نہیں ہو سکا — متن کو دبا کر منتخب کریں", "Couldn't copy — long-press the text to select it")); return false; }
   }
@@ -1599,7 +1608,14 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     ctx.closePath(); fill ? ctx.fill() : ctx.stroke();
   }
   function waLink(text) { return "https://wa.me/?text=" + encodeURIComponent(text); }
+  async function nativeShare(p, blob) {
+    try {
+      if (!blob) blob = await makeCard(p);
+      NATIVE.shareImage(await blobToB64(blob), p.text);
+    } catch (e) { NATIVE.shareText(p.text); }
+  }
   async function shareWhatsApp(p) {
+    if (NATIVE) { nativeShare(p); return; }
     try {
       const blob = await makeCard(p);
       const file = new File([blob], "noor-e-tasbeeh.png", { type: "image/png" });
@@ -1612,24 +1628,25 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   }
   async function shareSheet(p, waFirst) {
     const sh = openSheet(`<h2>${t("شیئر کریں", "Share")}</h2><div class="spinner"></div>`);
-    let url = "", file = null;
+    let url = "", file = null, blob = null;
     try {
-      const blob = await makeCard(p);
+      blob = await makeCard(p);
       url = URL.createObjectURL(blob);
       file = new File([blob], "noor-e-tasbeeh.png", { type: "image/png" });
     } catch (e) { /* canvas unavailable */ }
-    const canFiles = !!(file && navigator.canShare && (() => { try { return navigator.canShare({ files: [file] }); } catch (e) { return false; } })());
+    const canFiles = !!NATIVE || !!(file && navigator.canShare && (() => { try { return navigator.canShare({ files: [file] }); } catch (e) { return false; } })());
     sh.innerHTML = `<div class="grab"></div><h2>${t("شیئر کریں", "Share")}</h2>
       ${url ? `<img class="preview" src="${url}" alt="${t("شیئر کارڈ کی تصویر", "Share card image")}">` : ""}
       ${waFirst ? `<p class="small muted" style="margin:0">${t("اس ڈیوائس پر تصویر براہِ راست شیئر نہیں ہو سکی۔ واٹس ایپ پر متن بھیجیں، یا تصویر کو دبا کر محفوظ کریں اور پھر واٹس ایپ میں لگائیں۔", "This device couldn't share the image directly. Send the text on WhatsApp, or long-press the image to save it and attach it in WhatsApp.")}</p>` : ""}
       ${canFiles ? `<button class="btn gold block" data-sfile>${ICON.share} ${t("تصویر شیئر کریں (واٹس ایپ وغیرہ)", "Share image (WhatsApp etc.)")}</button>` : ""}
       <a class="btn wa block" href="${waLink(p.text)}" target="_blank" rel="noopener noreferrer">${ICON.wa} ${t("واٹس ایپ پر متن بھیجیں", "Send text on WhatsApp")}</a>
-      ${url ? `<a class="btn block" href="${url}" download="noor-e-tasbeeh.png">${ICON.download} ${t("تصویر محفوظ کریں", "Save image")}</a>` : ""}
+      ${url && !NATIVE ? `<a class="btn block" href="${url}" download="noor-e-tasbeeh.png">${ICON.download} ${t("تصویر محفوظ کریں", "Save image")}</a>` : ""}
       <button class="btn block" data-scopy>${ICON.copy} ${t("متن کاپی کریں", "Copy text")}</button>
       <p class="small muted" style="margin:0">${C.APP_DOWNLOAD_URL ? t("شیئر متن میں ایپ کا ڈاؤن لوڈ لنک شامل ہے۔", "The shared text includes the app download link.") : t("ڈاؤن لوڈ لنک ابھی شامل نہیں (APK اپ لوڈ ہونے کے بعد لگایا جائے گا)۔", "No download link yet (it will be added after the APK is uploaded).")}</p>
       <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`;
     const sf = sh.querySelector("[data-sfile]");
-    if (sf) sf.onclick = async () => { try { await navigator.share({ files: [file], text: p.text }); } catch (e) { if (e.name !== "AbortError") toast(t("شیئر نہیں ہو سکا", "Couldn't share")); } };
+    if (sf && NATIVE) sf.onclick = () => nativeShare(p, blob);
+    else if (sf) sf.onclick = async () => { try { await navigator.share({ files: [file], text: p.text }); } catch (e) { if (e.name !== "AbortError") toast(t("شیئر نہیں ہو سکا", "Couldn't share")); } };
     sh.querySelector("[data-scopy]").onclick = () => copyText(p.text);
   }
 
@@ -1807,8 +1824,8 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           ? `<p class="small" style="margin:4px 0 8px">${t("اینڈرائیڈ APK کا لنک:", "Android APK link:")}</p><a class="btn gold block" href="${esc(C.APP_DOWNLOAD_URL)}" target="_blank" rel="noopener noreferrer">${ICON.download} ${t("APK ڈاؤن لوڈ کریں", "Download APK")}</a>
              <p class="small muted ltr" style="margin:6px 0 0;text-align:start;overflow-wrap:anywhere">${esc(C.APP_DOWNLOAD_URL)}</p>`
           : `<p class="small muted" style="margin:4px 0 0">${t("ڈاؤن لوڈ لنک ابھی دستیاب نہیں۔ APK بننے اور اپ لوڈ ہونے کے بعد یہاں لنک آئے گا۔", "The download link isn't available yet. It will appear here once the APK is built and uploaded.")}</p>`}
-        <button class="btn block" id="installBtn" style="margin-top:8px">${ICON.download} ${t("اس فون پر انسٹال کریں (ویب ایپ)", "Install on this phone (web app)")}</button>
-        <p class="small muted" style="margin:6px 0 0">${t("ویب ایپ (PWA) انسٹال کرنے سے ہوم اسکرین پر آئیکن آ جاتا ہے، مگر یہ مکمل APK جیسی نہیں ہوتی۔", "Installing the web app (PWA) adds an icon to your home screen, but it isn't the same as a full APK.")}</p>
+        ${NATIVE ? "" : `<button class="btn block" id="installBtn" style="margin-top:8px">${ICON.download} ${t("اس فون پر انسٹال کریں (ویب ایپ)", "Install on this phone (web app)")}</button>
+        <p class="small muted" style="margin:6px 0 0">${t("ویب ایپ (PWA) انسٹال کرنے سے ہوم اسکرین پر آئیکن آ جاتا ہے، مگر یہ مکمل APK جیسی نہیں ہوتی۔", "Installing the web app (PWA) adds an icon to your home screen, but it isn't the same as a full APK.")}</p>`}
       </div>
 
       <div class="card small">
@@ -1830,7 +1847,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       </div>
       <p class="small muted" style="text-align:center">${C.appName} · ${t("ورژن", "Version")} ${C.version}</p>
     </div>`;
-    $("#installBtn").onclick = async () => {
+    if ($("#installBtn")) $("#installBtn").onclick = async () => {
       if (installPrompt) { installPrompt.prompt(); try { await installPrompt.userChoice; } catch (e) {} installPrompt = null; }
       else toast(t("براؤزر مینو (⋮) میں «Add to Home screen / Install app» دبائیں", "Open the browser menu (⋮) and tap “Add to Home screen / Install app”"));
     };
@@ -1856,6 +1873,13 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     }
     if (e.key === "Escape") closeSheet();
   });
+
+  // Android back button: close a sheet, else go back a screen; false on the home screen (app closes)
+  window.__ntBack = () => {
+    if ($("#overlay")) { closeSheet(); return true; }
+    if (route.name !== "home") { back(); return true; }
+    return false;
+  };
 
   // Expose pure helpers for tests
   window.__NT = { pruneSessions, dailyPick, localDayKey, normAr };
