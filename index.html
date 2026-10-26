@@ -594,7 +594,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.1",
+  version: "1.2.3",
 
   /* After you upload the APK to Google Drive, paste the real share link here
      (see GUIDE-ur.md, step 6). Leave empty until then — the app will simply
@@ -2511,37 +2511,73 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
      (Android WebView has no speechSynthesis). In Chrome / the web app: speechSynthesis.
      Free and offline once the phone has the voice installed. */
   const voice = {
-    seq: 0, waits: new Map(),
+    seq: 0, waits: new Map(), keep: [], diag: { tried: 0, ok: 0, last: "" },
     nativeOk() { return !!(NATIVE && NATIVE.speak); },
+    webOk() { return !!(window.speechSynthesis && window.SpeechSynthesisUtterance); },
     webVoices() { try { return window.speechSynthesis ? speechSynthesis.getVoices() : []; } catch (e) { return []; } },
+    norm(l) { return String(l || "").toLowerCase().replace("_", "-"); },
+    /* Chrome loads its voice list late (often empty on first call) — wait for it, max 2 s */
+    ready() {
+      if (this.nativeOk() || !this.webOk() || this.webVoices().length) return Promise.resolve();
+      return new Promise((r) => {
+        const tm = setTimeout(r, 2000);
+        try { speechSynthesis.addEventListener("voiceschanged", () => { clearTimeout(tm); r(); }, { once: true }); } catch (e) { clearTimeout(tm); r(); }
+      });
+    },
+    pick(lang) {
+      const vs = this.webVoices().filter((v) => this.norm(v.lang).startsWith(lang));
+      if (!vs.length) return null;
+      const pref = lang === "ar" ? ["ar-sa", "ar-eg", "ar-xa", "ar-ae"] : ["ur-pk", "ur-in"];
+      vs.sort((x, y) => {
+        const px = pref.indexOf(this.norm(x.lang)), py = pref.indexOf(this.norm(y.lang));
+        return (y.localService ? 1 : 0) - (x.localService ? 1 : 0) || (px < 0 ? 9 : px) - (py < 0 ? 9 : py);
+      });
+      return vs[0];
+    },
+    /* true / false; null = not known yet (voice list still loading) */
     has(lang) {
       if (this.nativeOk()) { try { return NATIVE.ttsHas ? String(NATIVE.ttsHas(lang)) === "true" : lang === "ar"; } catch (e) { return false; } }
-      return this.webVoices().some((v) => (v.lang || "").toLowerCase().startsWith(lang));
+      if (!this.webOk()) return false;
+      const vs = this.webVoices();
+      if (!vs.length) return null;
+      return vs.some((v) => this.norm(v.lang).startsWith(lang));
     },
     speak(text, lang, rate) {
-      return new Promise((res) => {
+      return new Promise(async (res) => {
         const id = "v" + (++this.seq);
-        const guard = setTimeout(() => { this.waits.delete(id); res(false); }, Math.max(3500, text.length * 380 / (rate || 1)));
-        const done = (ok) => { clearTimeout(guard); this.waits.delete(id); res(ok !== false); };
+        this.diag.tried++;
+        let started = false;
+        const guard = setTimeout(() => { this.waits.delete(id); this.diag.last = started ? "timeout" : "no-start"; res(false); }, Math.max(4500, text.length * 380 / (rate || 1)));
+        const done = (ok) => { clearTimeout(guard); this.waits.delete(id); if (ok !== false) { this.diag.ok++; this.diag.last = "ok"; } res(ok !== false); };
         if (this.nativeOk()) {
           this.waits.set(id, done);
-          try { NATIVE.speak(text, lang, String(rate || 1), id); } catch (e) { done(false); }
+          try { NATIVE.speak(text, lang, String(rate || 1), id); started = true; } catch (e) { this.diag.last = "native-error"; done(false); }
           return;
         }
+        if (!this.webOk()) { this.diag.last = "no-api"; done(false); return; }
         try {
-          const v = this.webVoices().find((x) => (x.lang || "").toLowerCase().startsWith(lang));
-          if (!v || !window.speechSynthesis) { done(false); return; }
+          await this.ready();
+          const v = this.pick(lang);
           const u = new SpeechSynthesisUtterance(text);
-          u.voice = v; u.lang = v.lang; u.rate = rate || 1;
-          u.onend = () => done(true); u.onerror = () => done(false);
+          /* even if the voice list is empty, try with the language code — Chrome often still finds the voice */
+          if (v) u.voice = v;
+          u.lang = v ? v.lang : (lang === "ar" ? "ar-SA" : "ur-PK");
+          u.rate = rate || 1; u.volume = 1; u.pitch = 1;
+          u.onstart = () => { started = true; };
+          u.onend = () => done(true);
+          u.onerror = (e) => { this.diag.last = "error:" + ((e && e.error) || "?"); if (e && e.error === "interrupted") { clearTimeout(guard); this.waits.delete(id); res(false); } else done(false); };
+          /* keep a reference — otherwise Chrome may garbage-collect it and the "end" event never comes */
+          this.keep.push(u); if (this.keep.length > 6) this.keep.shift();
+          try { speechSynthesis.resume(); } catch (e) {}
           speechSynthesis.speak(u);
-        } catch (e) { done(false); }
+        } catch (e) { this.diag.last = "web-error"; done(false); }
       });
     },
     stop() {
       try { if (this.nativeOk() && NATIVE.stopSpeak) NATIVE.stopSpeak(); } catch (e) {}
-      try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
-      for (const f of this.waits.values()) f(false);
+      /* only cancel when something is playing — cancel() right before speak() makes some Chrome versions drop the next sentence */
+      try { if (window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel(); } catch (e) {}
+      for (const f of [...this.waits.values()]) f(false);
       this.waits.clear();
     }
   };
@@ -2571,6 +2607,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         <div class="chips" style="justify-content:center">
           <button class="chip" id="nUrV" aria-pressed="${urduVoice}">${t("اردو معنی بھی آواز میں", "Speak Urdu meaning too")}</button>
           <button class="chip" id="nSlow" aria-pressed="${slow}">${t("آہستہ", "Slow")}</button>
+          <button class="chip" id="nTest">🔊 ${t("آواز چیک کریں", "Test sound")}</button>
         </div>
         <div id="nVoiceNote"></div>
       </section>
@@ -2603,7 +2640,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       else await wait(900);
     }
     async function playAll() {
-      voice.stop(); const run = ++namesState.run; namesState.playing = true; paintPlay();
+      voice.stop(); const run = ++namesState.run; namesState.playing = true; paintPlay(); await voice.ready(); if (run !== namesState.run) return;
       for (let i = namesState.i; i < 99; i++) {
         if (run !== namesState.run) return;
         show(i, true);
@@ -2618,21 +2655,41 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     $("#nNext").onclick = () => { const was = namesState.playing; stopNames(); show(Math.min(98, namesState.i + 1), true); if (was) playAll(); else paintPlay(); };
     $("#nPrev").onclick = () => { const was = namesState.playing; stopNames(); show(Math.max(0, namesState.i - 1), true); if (was) playAll(); else paintPlay(); };
     $("#nUrV").onclick = (e) => { const v = !store.get("names.urVoice", true); store.set("names.urVoice", v); e.currentTarget.setAttribute("aria-pressed", String(v)); namesVoiceNote(); };
+    $("#nTest").onclick = () => { stopNames(); paintPlay(); voiceTest(); };
     $("#nSlow").onclick = (e) => { const v = !store.get("names.slow", false); store.set("names.slow", v); e.currentTarget.setAttribute("aria-pressed", String(v)); };
     document.querySelectorAll("[data-ni]").forEach((b) => b.onclick = () => {
       const i = +b.dataset.ni; stopNames(); paintPlay(); show(i, false); window.scrollTo({ top: 0, behavior: "smooth" });
       const run = ++namesState.run; sayOne(i, run);
     });
   }
+  const HOWTO_AR = () => t("فون کی <b>Settings</b> کھولیں ← اوپر سرچ میں <b>Text-to-speech</b> لکھیں ← <b>Preferred engine</b> میں <b>Speech Services by Google</b> چنیں ← اس کے ⚙️ پر دبائیں ← <b>Install voice data</b> ← <b>Arabic</b> اور <b>Urdu</b> ڈاؤن لوڈ کریں (مفت)۔ پھر ایپ بند کر کے دوبارہ کھولیں۔ (Samsung فون میں Samsung کی بجائے Google والا انجن چنیں — اس میں عربی ہوتی ہے۔ Google والا انجن نہ ہو تو Play Store سے «Speech Services by Google» انسٹال/اپڈیٹ کریں۔)",
+    "Open phone <b>Settings</b> → search <b>Text-to-speech</b> → set <b>Preferred engine</b> to <b>Speech Services by Google</b> → tap its ⚙️ → <b>Install voice data</b> → download <b>Arabic</b> and <b>Urdu</b> (free). Then close and reopen the app. (On Samsung phones choose Google's engine, not Samsung's. If it is missing, install/update «Speech Services by Google» from Play Store.)");
   function namesVoiceNote() {
     const box = $("#nVoiceNote"); if (!box) return;
     const ar = voice.has("ar"), ur = voice.has("ur");
     let msg = "";
     if (NATIVE && !NATIVE.speak) msg = t("آواز کے لیے «نورِ تسبیح» کا نیا ورژن (1.2) انسٹال کریں۔ تب تک نام بغیر آواز کے آگے چلیں گے۔", "Install the new version (1.2) of the app for the voice. Until then the names move on without sound.");
-    else if (!ar) msg = t("اس فون/براؤزر میں عربی آواز (Text-to-Speech) نہیں ملی، اس لیے نام بغیر آواز کے خود بخود آگے چلیں گے۔ آواز کے لیے: فون کی Settings ← Text-to-speech ← Google Speech Services ← Install voice data ← Arabic (اور Urdu) مفت ڈاؤن لوڈ کریں۔",
-      "No Arabic Text-to-Speech voice was found on this phone/browser, so the names will move on silently. For sound: phone Settings → Text-to-speech → Google Speech Services → Install voice data → Arabic (and Urdu), free.");
-    else if (store.get("names.urVoice", true) && !ur) msg = t("اردو آواز اس فون میں نہیں ملی — عربی نام آواز میں، اردو معنی اسکرین پر چلیں گے۔ (Settings ← Text-to-speech میں Urdu آواز مفت انسٹال ہو سکتی ہے)", "No Urdu voice on this phone — the Arabic name is spoken and the Urdu meaning is shown on screen. (An Urdu voice can be installed free in Settings → Text-to-speech.)");
+    else if (!NATIVE && !voice.webOk()) msg = t("یہ براؤزر آواز (Text-to-Speech) نہیں چلاتا۔ ویب سائٹ <b>Google Chrome</b> میں کھولیں۔", "This browser has no Text-to-Speech. Open the site in <b>Google Chrome</b>.");
+    else if (ar === false) msg = t("اس فون میں عربی آواز نہیں ملی، اس لیے نام بغیر آواز کے آگے چلیں گے۔ ", "No Arabic voice found on this phone, so the names move on silently. ") + HOWTO_AR();
+    else if (ar && store.get("names.urVoice", true) && ur === false) msg = t("اردو آواز اس فون میں نہیں ملی — عربی نام آواز میں، اردو معنی صرف اسکرین پر۔ ", "No Urdu voice on this phone — Arabic is spoken, the Urdu meaning is only shown. ") + HOWTO_AR();
     box.innerHTML = msg ? `<p class="small muted" style="margin:6px 0 0;text-align:center">${msg}</p>` : "";
+  }
+  async function voiceTest() {
+    const box = $("#nVoiceNote"); if (!box) return;
+    box.innerHTML = `<p class="small" style="margin:6px 0 0;text-align:center">${t("آواز چیک ہو رہی ہے… «اَللّٰہ»", "Testing sound… «Allah»")}</p>`;
+    await voice.ready();
+    const ok = await voice.speak("الله", "ar", 0.85);
+    let okUr = null;
+    if (ok && voice.has("ur") !== false) okUr = await voice.speak("اللہ", "ur", 0.95);
+    const mode = NATIVE ? (voice.nativeOk() ? "app-tts" : "app-old") : (voice.webOk() ? "chrome" : "no-tts");
+    const vs = voice.webVoices();
+    const tech = `[${mode} · ar:${voice.has("ar")} · ur:${voice.has("ur")} · voices:${NATIVE ? "-" : vs.length} · ${voice.diag.last}]`;
+    let msg;
+    if (ok) msg = t("✅ عربی آواز چل رہی ہے۔", "✅ Arabic voice works.") + (okUr === false ? " " + t("اردو آواز نہیں چلی — ", "Urdu voice did not play — ") + HOWTO_AR() : "") + t(" اگر پھر بھی کچھ سنائی نہ دیا ہو تو فون کی آواز (والیوم بٹن) اونچی کریں۔", " If you still heard nothing, turn up the phone's <b>media volume</b>.");
+    else if (mode === "app-old") msg = t("❌ پرانی ایپ ہے۔ نیا ورژن (1.2) انسٹال کریں۔", "❌ Old app. Install the new version (1.2).");
+    else if (mode === "no-tts") msg = t("❌ یہ براؤزر آواز نہیں چلاتا۔ <b>Google Chrome</b> میں کھولیں۔", "❌ This browser can't speak. Use <b>Google Chrome</b>.");
+    else msg = t("❌ آواز نہیں چلی۔ ", "❌ No sound. ") + HOWTO_AR();
+    box.innerHTML = `<p class="small" style="margin:6px 0 0;text-align:center">${msg}</p><p class="small muted ltr" style="margin:2px 0 0;text-align:center;font-size:11px">${tech}</p>`;
   }
 
   /* ================= QIBLA (compass) =================
