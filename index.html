@@ -565,6 +565,11 @@ html[lang="en"] .dial text { font-family: var(--f-ui-en); font-size: 17px; }
 select.input { appearance: auto; }
 [hidden] { display: none !important; }
 
+/* ---------- choose reciter button ---------- */
+.rcbtn b { color: var(--gold-soft); font-weight: 700; }
+.chip.rcbtn b { color: inherit; }
+.btn.rcbtn { border-color: var(--line); }
+
 </style>
 </head>
 <body>
@@ -589,7 +594,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.0",
+  version: "1.2.1",
 
   /* After you upload the APK to Google Drive, paste the real share link here
      (see GUIDE-ur.md, step 6). Leave empty until then — the app will simply
@@ -1667,6 +1672,12 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         <button class="qb" data-qb="x" aria-label="${t("بند کریں", "Close")}">✕</button></div>`;
     }
   };
+  /* "Choose reciter" button — on the Quran home, the mushaf and the surah screens */
+  const reciterName = () => (LANG === "en" ? reciter().en : reciter().ur);
+  function reciterBtnHTML(cls = "btn block") {
+    return `<button class="${cls} rcbtn" data-rcbtn type="button">🎙 ${t("قاری منتخب کریں", "Choose reciter")}: <b data-rcname>${esc(reciterName())}</b> ▾</button>`;
+  }
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-rcbtn]")) { e.preventDefault(); reciterSheet(); } });
   function reciterSheet() {
     const cur = reciter().id;
     const sh = openSheet(`<h2>${t("قاری منتخب کریں", "Choose reciter")}</h2>
@@ -1675,6 +1686,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`);
     sh.querySelectorAll("[data-rc]").forEach((b) => b.onclick = () => {
       store.set("quran.reciter", b.dataset.rc); closeSheet();
+      document.querySelectorAll("[data-rcname]").forEach((x) => (x.textContent = reciterName()));
       if (player.active()) player.play();
       toast(t("قاری: ", "Reciter: ") + (LANG === "en" ? reciter().en : reciter().ur));
     });
@@ -1695,6 +1707,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     const tab = store.get("quran.tab", "surah");
     view().innerHTML = topbar(t("قرآن پاک", "Quran Pak")) + `<div class="view" id="qv">
       <div id="qCont">${continueHTML()}</div>
+      ${reciterBtnHTML()}
       <div class="seg seg3" role="group" aria-label="${t("قرآن کیسے کھولیں", "How to open the Quran")}">
         <button data-qtab="surah" aria-pressed="${tab === "surah"}">${t("سورتیں", "Surahs")}</button>
         <button data-qtab="para" aria-pressed="${tab === "para"}">${t("پارے", "Paras")}</button>
@@ -1814,6 +1827,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           <button class="chip" id="mPlay">${ICON.play} ${t("اس صفحے کی تلاوت", "Recite this page")}</button>
           <button class="chip" id="mTr" aria-pressed="${showTr}">${t("اردو ترجمہ", "Urdu translation")}</button>
           <button class="chip" id="mJump">${t("پارہ / صفحہ بدلیں", "Para / page")}</button>
+          ${reciterBtnHTML("chip")}
         </div>
         <article class="mpage ${showTr ? "withtr" : ""}" id="mpage" aria-live="polite"><div class="spinner"></div></article>
         <div class="mpager">
@@ -1963,6 +1977,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           <button class="btn gold grow" id="sPlay">${ICON.play} ${t("پوری سورت کی تلاوت سنیں", "Listen to the whole surah")}</button>
           ${ar.ayahs[0] && ar.ayahs[0].page ? `<button class="btn grow" id="sMushaf">${ICON.book} ${t("مصحف میں پڑھیں", "Read in mushaf")}</button>` : ""}
         </div>
+        ${reciterBtnHTML()}
         <div class="row card" style="padding:10px 12px">
           <label for="jump" class="small muted">${t("آیت نمبر پر جائیں", "Go to ayah")}</label>
           <input id="jump" class="input grow" type="number" min="1" max="${ar.numberOfAyahs}" inputmode="numeric" style="max-width:110px">
