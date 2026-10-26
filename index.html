@@ -538,6 +538,11 @@ details.more summary::-webkit-details-marker { display: none; }
 .nctl { display: flex; gap: 14px; align-items: center; justify-content: center; margin: 8px 0 4px; }
 .qb.big { width: 62px; height: 62px; }
 .qb.big svg { width: 26px; height: 26px; }
+.nmini[hidden] { display: none; }
+.nmini .qbar-in { justify-content: space-between; }
+.nmini .nm-txt { flex: 1; min-width: 0; text-align: center; line-height: 1.3; cursor: pointer; }
+.nmini .nm-ar { font-family: var(--f-quran); font-size: 22px; color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nmini .nm-no { font-size: 11px; color: var(--gold-soft); opacity: .8; }
 .ngrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .ncard { display: flex; flex-direction: column; align-items: center; gap: 0; padding: 8px 4px; border-radius: 14px; border: 1px solid var(--line-soft); background: var(--panel); position: relative; min-height: 118px; justify-content: center; }
 .ncard.on { border-color: var(--gold); background: #0f4a34; box-shadow: 0 0 0 2px rgba(214,178,94,.25); }
@@ -594,7 +599,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.3",
+  version: "1.2.5",
 
   /* After you upload the APK to Google Drive, paste the real share link here
      (see GUIDE-ur.md, step 6). Leave empty until then — the app will simply
@@ -1217,6 +1222,12 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           <div class="hero-date">${esc(hijri(today))} <span class="muted">${t("(تقریبی)", "(approx.)")}</span> · ${esc(fmtDate(today))}</div>
         </div>
       </section>
+      ${NATIVE && !NATIVE.speak && C.APP_DOWNLOAD_URL ? `<div class="card" id="updBanner" style="border:1.5px solid var(--gold)">
+        <b style="color:var(--gold)">🔔 ${t("ایپ کا نیا ورژن آ گیا ہے", "A new version of the app is available")}</b>
+        <p class="small" style="margin:4px 0 8px" ${U}>${t("آپ کے فون میں پرانی ایپ ہے۔ اللہ کے ۹۹ ناموں کی آواز اور GPS قبلہ کے لیے نیا ورژن انسٹال کریں۔ <b>پرانی ایپ ڈیلیٹ نہ کریں</b> — نیا ورژن اوپر انسٹال کریں، آپ کی تسبیحات محفوظ رہیں گی۔", "Your phone has an old version. Install the new one for the voice of the 99 Names and GPS Qibla. <b>Don't delete the old app</b> — install the new one over it; your counts stay safe.")}</p>
+        <a class="btn gold block" href="${esc(C.APP_DOWNLOAD_URL)}" target="_blank" rel="noopener noreferrer" download="${esc(C.APP_DOWNLOAD_NAME || "Noor-e-Tasbeeh.apk")}">${ICON.download} ${t("نیا ورژن ڈاؤن لوڈ کریں", "Download new version")}</a>
+        ${NATIVE.copyText ? `<button class="btn block" id="updCopy" style="margin-top:8px">${t("لنک کاپی کریں (Chrome میں کھولنے کے لیے)", "Copy link (to open in Chrome)")}</button>` : ""}
+      </div>` : ""}
       <div class="view" style="padding-top:0;margin-top:-6px">
         <button class="resume" data-go="tasbeeh">
           <span class="num">${cur.count}</span>
@@ -1241,6 +1252,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
 
         <p class="footer-dua">${t("مرحوم محمد عاشق صاحب کے لیے دعائے مغفرت کی درخواست ہے۔", "Please pray for the forgiveness of the late Muhammad Ashiq.")} <button data-go="about">${t("مزید", "More")}</button></p>
       </div>`;
+    { const uc = $("#updCopy"); if (uc) uc.onclick = () => copyText(C.APP_DOWNLOAD_URL); }
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-mkhome]")) { const m = getMarks()[0]; if (m) openMark(m); } });
   function tile(go, icon, title, sub, cls = "") {
@@ -2619,6 +2631,19 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <p class="small muted">${t("ناموں کی ترتیب جامع ترمذی (3507) کی روایت کے مطابق ہے؛ محدثین نے اس فہرست کی سند پر کلام کیا ہے، جبکہ ۹۹ ناموں والی اصل حدیث صحیح بخاری و مسلم میں ہے۔ آواز فون کی اپنی مفت «Text-to-Speech» سے آتی ہے (کمپیوٹر کی آواز، کسی قاری کی نہیں)۔",
         "The order follows the narration in Jami at-Tirmidhi (3507); hadith scholars have discussed the chain of this list, while the hadith about the 99 names itself is in Bukhari and Muslim. The voice is the phone's own free Text-to-Speech (a computer voice, not a reciter).")}</p>
     </div>`;
+    view().insertAdjacentHTML("beforeend", `<div class="qbar nmini" id="nMini" hidden><div class="qbar-in">
+        <button class="qb" id="nmPrev" aria-label="${t("پچھلا نام", "Previous name")}">${ICON.prev}</button>
+        <button class="qb main" id="nmPlay" aria-label="${t("چلائیں / روکیں", "Play / Pause")}">${ICON.play}</button>
+        <div class="nm-txt" id="nmTxt"><div class="nm-ar" id="nmAr"></div><div class="nm-no" id="nmNo"></div></div>
+        <button class="qb" id="nmNext" aria-label="${t("اگلا نام", "Next name")}">${ICON.next}</button>
+      </div></div>`);
+    /* the mini bar appears whenever the big play button has scrolled out of sight */
+    let stageSeen = true;
+    const paintMini = () => { const m = $("#nMini"); if (m) m.hidden = stageSeen; };
+    try {
+      const io = new IntersectionObserver((es) => { stageSeen = es[0].isIntersecting; paintMini(); }, { threshold: 0.15 });
+      io.observe($("#nStage").querySelector(".nctl"));
+    } catch (e) { stageSeen = false; paintMini(); }
     namesState.i = Math.min(98, namesState.i || 0);
     show(namesState.i, false);
     namesVoiceNote();
@@ -2626,9 +2651,10 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       const x = L[i]; namesState.i = i;
       $("#nNum").textContent = `${N(i + 1)} / ${N(99)}`; $("#nAr").textContent = x[0]; $("#nTr").textContent = x[1]; $("#nUr").textContent = x[2];
       if ($("#nEn")) $("#nEn").textContent = x[3];
+      if ($("#nmAr")) { $("#nmAr").textContent = x[0]; $("#nmNo").textContent = `${N(i + 1)} / ${N(99)} · ${LANG === "en" ? x[1] : x[2]}`; }
       const st = $("#nStage"); st.classList.remove("pop"); void st.offsetWidth; st.classList.add("pop");
       document.querySelectorAll(".ncard.on").forEach((e) => e.classList.remove("on"));
-      const c = document.querySelector(`[data-ni="${i}"]`); if (c) { c.classList.add("on"); if (scroll) { const r = c.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); } }
+      const c = document.querySelector(`[data-ni="${i}"]`); if (c) { c.classList.add("on"); if (scroll && !stageSeen) { const r = c.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) c.scrollIntoView({ block: "nearest", behavior: "smooth" }); } }
     }
     async function sayOne(i, run) {
       const x = L[i], rate = store.get("names.slow", false) ? 0.62 : 0.85;
@@ -2650,11 +2676,15 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       }
       if (run === namesState.run) { namesState.playing = false; namesState.i = 0; paintPlay(); toast(t("۹۹ نام مکمل — سبحان اللہ", "All 99 names done — SubhanAllah")); }
     }
-    function paintPlay() { const b = $("#nPlay"); if (b) b.innerHTML = namesState.playing ? ICON.pause : ICON.play; }
+    function paintPlay() { const ic = namesState.playing ? ICON.pause : ICON.play; ["#nPlay", "#nmPlay"].forEach((q) => { const b = $(q); if (b) b.innerHTML = ic; }); }
     $("#nPlay").onclick = () => { if (namesState.playing) { stopNames(); paintPlay(); } else playAll(); };
     $("#nNext").onclick = () => { const was = namesState.playing; stopNames(); show(Math.min(98, namesState.i + 1), true); if (was) playAll(); else paintPlay(); };
     $("#nPrev").onclick = () => { const was = namesState.playing; stopNames(); show(Math.max(0, namesState.i - 1), true); if (was) playAll(); else paintPlay(); };
     $("#nUrV").onclick = (e) => { const v = !store.get("names.urVoice", true); store.set("names.urVoice", v); e.currentTarget.setAttribute("aria-pressed", String(v)); namesVoiceNote(); };
+    $("#nmPlay").onclick = () => $("#nPlay").click();
+    $("#nmPrev").onclick = () => $("#nPrev").click();
+    $("#nmNext").onclick = () => $("#nNext").click();
+    $("#nmTxt").onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
     $("#nTest").onclick = () => { stopNames(); paintPlay(); voiceTest(); };
     $("#nSlow").onclick = (e) => { const v = !store.get("names.slow", false); store.set("names.slow", v); e.currentTarget.setAttribute("aria-pressed", String(v)); };
     document.querySelectorAll("[data-ni]").forEach((b) => b.onclick = () => {
