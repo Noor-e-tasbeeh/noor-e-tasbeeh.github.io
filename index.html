@@ -599,7 +599,14 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.5",
+  version: "1.2.6",
+
+  /* Contact email shown on the "About the App" screen */
+  CONTACT_EMAIL: "kashif.sid1@gmail.com",
+
+  /* GoatCounter code (free anonymous usage count). Dashboard:
+     https://<code>.goatcounter.com — leave empty "" to switch counting off. */
+  GOATCOUNTER_CODE: "nooretasbeeh",
 
   /* After you upload the APK to Google Drive, paste the real share link here
      (see GUIDE-ur.md, step 6). Leave empty until then — the app will simply
@@ -1172,6 +1179,36 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <div style="margin-top:8px"><button class="btn" id="${id}">${t("دوبارہ کوشش کریں", "Try again")}</button></div></div>`;
   }
 
+  /* ================= anonymous usage count (GoatCounter) ================= */
+  const stats = (() => {
+    const code = (C.GOATCOUNTER_CODE || "").trim();
+    const on = !!code && location.protocol === "https:" && !/claude|anthropic|localhost/.test(location.hostname);
+    const queue = [];
+    let ready = false;
+    const send = (o) => { try { window.goatcounter.count(o); } catch (e) {} };
+    if (on) {
+      window.goatcounter = { no_onload: true };
+      const sc = document.createElement("script");
+      sc.async = true;
+      sc.src = "https://gc.zgo.at/count.js";
+      sc.setAttribute("data-goatcounter", "https://" + code + ".goatcounter.com/count");
+      sc.onload = () => { ready = true; queue.splice(0).forEach(send); };
+      document.head.appendChild(sc);
+    }
+    const count = (o) => { if (!on) return; ready ? send(o) : queue.push(o); };
+    return {
+      page(name) { count({ path: "/" + name, title: name }); },
+      platformOncePerDay() {
+        // which app: old APK (app-old), new APK (app-tts) or browser — counted once per device per day
+        const mode = NATIVE ? (NATIVE.speak ? "apk-new" : "apk-old") : (window.matchMedia && matchMedia("(display-mode: standalone)").matches ? "web-installed" : "browser");
+        const key = "nt_stat_day";
+        const today = new Date().toISOString().slice(0, 10);
+        try { if (localStorage.getItem(key) === today) return; localStorage.setItem(key, today); } catch (e) {}
+        count({ path: "platform-" + mode, title: "Platform: " + mode, event: true });
+      }
+    };
+  })();
+
   /* ================= router ================= */
   let route = { name: "home", params: {} };
   const historyStack = [];
@@ -1181,6 +1218,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     try { if (location.hash !== "#" + name) history.replaceState(null, "", "#" + name); } catch (e) {}
     render();
     window.scrollTo(0, 0);
+    stats.page(name);
   }
   function back() {
     const prev = historyStack.pop();
@@ -2958,28 +2996,16 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         <p class="small muted" style="margin:6px 0 0">${t("ویب ایپ (PWA) انسٹال کرنے سے ہوم اسکرین پر آئیکن آ جاتا ہے، مگر یہ مکمل APK جیسی نہیں ہوتی۔", "Installing the web app (PWA) adds an icon to your home screen, but it isn't the same as a full APK.")}</p>`}
       </div>
 
-      <div class="card small">
-        <b style="color:var(--gold)">${t("ذرائع (سب مفت)", "Sources (all free)")}</b><br>
-        ${t(`• قرآن: alquran.cloud — عربی متن Tanzil (رسمِ عثمانی)، اردو ترجمہ مولانا محمد جوناگڑھی<br>
-        • احادیث: fawazahmed0/hadith-api (jsDelivr CDN)<br>
-        • نماز کے بعد اذکار: مالک کا فراہم کردہ اذکار کارڈ<br>
-        • صبح و شام کے اذکار: حصن المسلم کے حوالہ جات<br>
-        • تلاوت کی آواز: cdn.islamic.network (alquran.cloud)<br>
-        • قبلہ: فون کے اندر حساب (کوئی سرور نہیں)<br>
-        • اللہ کے ۹۹ نام: جامع ترمذی (3507) کی ترتیب؛ آواز: فون کی Text-to-Speech`,
-        `• Quran: alquran.cloud — Arabic text Tanzil (Uthmani script), Urdu translation by Maulana Muhammad Junagarhi<br>
-        • Hadith: fawazahmed0/hadith-api (jsDelivr CDN)<br>
-        • Azkar after prayer: the Azkar card provided by the app owner<br>
-        • Morning & evening azkar: references from Hisn al-Muslim<br>
-        • Recitation audio: cdn.islamic.network (alquran.cloud)<br>
-        • Qibla: calculated on the phone (no server)<br>
-        • 99 Names: order of Jami at-Tirmidhi (3507); voice: the phone's Text-to-Speech`)}
+      <div class="card">
+        <b style="color:var(--gold)">${t("رابطہ", "Contact")}</b>
+        <p class="small" style="margin:4px 0 8px">${t("کسی غلطی، مشورے یا سوال کے لیے ای میل کریں:", "For any mistake, suggestion or question, please email:")}</p>
+        <a class="btn block" href="mailto:${esc(C.CONTACT_EMAIL)}?subject=${encodeURIComponent("Noor-e-Tasbeeh")}"><span class="ltr">${esc(C.CONTACT_EMAIL)}</span></a>
       </div>
 
       <div class="card small">
         <b style="color:var(--gold)">${t("رازداری", "Privacy")}</b><br>
-        ${t("کوئی اکاؤنٹ نہیں، کوئی اشتہار نہیں، کوئی ذاتی معلومات جمع نہیں ہوتیں۔ تسبیح، پیش رفت اور محفوظ آیات/احادیث صرف آپ کے فون میں رہتی ہیں۔ براؤزر ڈیٹا صاف کرنے یا ایپ ان انسٹال کرنے سے یہ ریکارڈ مٹ سکتے ہیں۔ قرآن/حدیث لوڈ کرتے وقت صرف متعلقہ صفحے کی درخواست ان مفت سرورز کو جاتی ہے۔ قبلہ کے لیے آپ کی جگہ صرف اسی فون میں رہتی ہے، کہیں نہیں بھیجی جاتی۔",
-          "No account, no ads, no personal data collected. Tasbeeh counts, progress and saved ayahs/hadith stay on your phone. Clearing browser data or uninstalling the app can erase these records. When Quran or Hadith text loads, only the request for that page goes to these free servers. Your location for the Qibla stays on this phone and is never sent anywhere.")}
+        ${t("کوئی اکاؤنٹ نہیں، کوئی اشتہار نہیں، کوئی ذاتی معلومات جمع نہیں ہوتیں۔ ایپ صرف گمنام گنتی کرتی ہے (کتنے لوگ ایپ کھولتے ہیں اور کون سا حصہ)، بغیر کوکیز اور بغیر کسی کی پہچان کے (GoatCounter)۔ تسبیح، پیش رفت اور محفوظ آیات/احادیث صرف آپ کے فون میں رہتی ہیں۔ براؤزر ڈیٹا صاف کرنے یا ایپ ان انسٹال کرنے سے یہ ریکارڈ مٹ سکتے ہیں۔ قرآن/حدیث لوڈ کرتے وقت صرف متعلقہ صفحے کی درخواست ان مفت سرورز کو جاتی ہے۔ قبلہ کے لیے آپ کی جگہ صرف اسی فون میں رہتی ہے، کہیں نہیں بھیجی جاتی۔",
+          "No account, no ads, no personal data collected. The app only keeps an anonymous count (how many people open it and which sections), with no cookies and nothing that identifies anyone (GoatCounter). Tasbeeh counts, progress and saved ayahs/hadith stay on your phone. Clearing browser data or uninstalling the app can erase these records. When Quran or Hadith text loads, only the request for that page goes to these free servers. Your location for the Qibla stays on this phone and is never sent anywhere.")}
       </div>
       <p class="small muted" style="text-align:center">${C.appName} · ${t("ورژن", "Version")} ${C.version}</p>
     </div>`;
@@ -3047,6 +3073,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   getSessions();
   const start = (location.hash || "").replace("#", "");
   go(SCREENS[start] && !["surah", "hsection"].includes(start) ? start : "home", {}, false);
+  stats.platformOncePerDay();
   window.__NT.player = player;
 
   // Service worker (only works on real hosting; ignored in previews)
