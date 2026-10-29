@@ -627,7 +627,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.7",
+  version: "1.2.8",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -642,6 +642,10 @@ const APP_CONFIG = {
   APP_DOWNLOAD_URL: "https://drive.google.com/uc?export=download&id=1EZ-JUnd5lQiDegxBCuMAdygSTAlmfM5-",
   /* Name shown to people instead of the long link */
   APP_DOWNLOAD_NAME: "Noor-e-Tasbeeh.apk",
+  /* Version of the APK that is at the link above (2 = v1.2, 3 = v1.2.8 with background recitation).
+     People whose app is older than this see a "new version available" card on the home screen.
+     Change to 3 ONLY after the new APK has been uploaded to the link above. */
+  LATEST_APK_VERSION: 2,
 
 
   /* Free data sources (no API key needed) */
@@ -1101,6 +1105,8 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
 
   /* ================= Android app bridge (only inside the APK) ================= */
   const NATIVE = (typeof window !== "undefined" && window.AndroidShare) ? window.AndroidShare : null;
+  // 1 = first APK, 2 = v1.2 (voice, Qibla), 3 = v1.2.8 (recitation in the background, earbud buttons)
+  const APK_VER = NATIVE ? (() => { try { return NATIVE.appVersion ? +NATIVE.appVersion() || 1 : 1; } catch (e) { return 1; } })() : 0;
   const blobToB64 = (blob) => new Promise((res, rej) => {
     const r = new FileReader();
     r.onload = () => res(String(r.result).split(",")[1] || "");
@@ -1229,7 +1235,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       page(name) { count({ path: "/" + name, title: name }); },
       platformOncePerDay() {
         // which app: old APK (app-old), new APK (app-tts) or browser — counted once per device per day
-        const mode = NATIVE ? (NATIVE.speak ? "apk-new" : "apk-old") : (window.matchMedia && matchMedia("(display-mode: standalone)").matches ? "web-installed" : "browser");
+        const mode = NATIVE ? (APK_VER >= 3 ? "apk-v3" : NATIVE.speak ? "apk-new" : "apk-old") : (window.matchMedia && matchMedia("(display-mode: standalone)").matches ? "web-installed" : "browser");
         const key = "nt_stat_day";
         const today = new Date().toISOString().slice(0, 10);
         try { if (localStorage.getItem(key) === today) return; localStorage.setItem(key, today); } catch (e) {}
@@ -1289,9 +1295,9 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           <div class="hero-date">${esc(hijri(today))} <span class="muted">${t("(تقریبی)", "(approx.)")}</span> · ${esc(fmtDate(today))}</div>
         </div>
       </section>
-      ${NATIVE && !NATIVE.speak && C.APP_DOWNLOAD_URL ? `<div class="card" id="updBanner" style="border:1.5px solid var(--gold)">
+      ${NATIVE && APK_VER < (C.LATEST_APK_VERSION || 2) && C.APP_DOWNLOAD_URL ? `<div class="card" id="updBanner" style="border:1.5px solid var(--gold)">
         <b style="color:var(--gold)">🔔 ${t("ایپ کا نیا ورژن آ گیا ہے", "A new version of the app is available")}</b>
-        <p class="small" style="margin:4px 0 8px" ${U}>${t("آپ کے فون میں پرانی ایپ ہے۔ اللہ کے ۹۹ ناموں کی آواز اور GPS قبلہ کے لیے نیا ورژن انسٹال کریں۔ <b>پرانی ایپ ڈیلیٹ نہ کریں</b> — نیا ورژن اوپر انسٹال کریں، آپ کی تسبیحات محفوظ رہیں گی۔", "Your phone has an old version. Install the new one for the voice of the 99 Names and GPS Qibla. <b>Don't delete the old app</b> — install the new one over it; your counts stay safe.")}</p>
+        <p class="small" style="margin:4px 0 8px" ${U}>${t("آپ کے فون میں پرانی ایپ ہے۔ نئے ورژن میں: اسکرین بند ہونے پر بھی تلاوت جاری، ایئربڈز کے بٹن سے روکنا/چلانا، اللہ کے ۹۹ ناموں کی آواز اور GPS قبلہ۔ <b>پرانی ایپ ڈیلیٹ نہ کریں</b> — نیا ورژن اوپر انسٹال کریں، آپ کی تسبیحات محفوظ رہیں گی۔", "Your phone has an old version. The new one keeps reciting with the screen off, works with earbud buttons, and has the voice of the 99 Names and GPS Qibla. <b>Don't delete the old app</b> — install the new one over it; your counts stay safe.")}</p>
         <a class="btn gold block" href="${esc(C.APP_DOWNLOAD_URL)}" target="_blank" rel="noopener noreferrer" download="${esc(C.APP_DOWNLOAD_NAME || "Noor-e-Tasbeeh.apk")}">${ICON.download} ${t("نیا ورژن ڈاؤن لوڈ کریں", "Download new version")}</a>
         ${NATIVE.copyText ? `<button class="btn block" id="updCopy" style="margin-top:8px">${t("لنک کاپی کریں (Chrome میں کھولنے کے لیے)", "Copy link (to open in Chrome)")}</button>` : ""}
       </div>` : ""}
@@ -1654,7 +1660,12 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     const l = root.querySelector("[data-last]"); if (l) l.onclick = () => go("mushaf", { page: store.get("quran.last", { page: 1 }).page });
   }
 
-  /* ---------- recitation player (verse by verse, highlights the ayah being recited) ---------- */
+  /* ---------- recitation player (verse by verse, highlights the ayah being recited) ----------
+     v1.2.8:
+      - optional Urdu translation audio after every Arabic ayah (recorded voices, free)
+      - earbuds / headset / lock-screen buttons (Media Session)
+      - inside the new APK (appVersion 3+) the phone's own media player plays the recitation in a
+        background service, so it keeps going with the screen off until the user stops it. */
   const RECITERS = [
     { id: "ar.alafasy", ur: "مشاری راشد العفاسی", en: "Mishary Rashid Alafasy", src: [[128, "ar.alafasy"], [64, "ar.alafasy"]] },
     { id: "ar.abdulbasitmurattal", ur: "عبدالباسط عبدالصمد", en: "Abdul Basit Abdul Samad", src: [[192, "ar.abdulbasitmurattal"], [64, "ar.abdulbasitmurattal"], [192, "ar.abdulbasit"]] },
@@ -1664,57 +1675,128 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   ];
   const reciter = () => RECITERS.find((r) => r.id === store.get("quran.reciter", "ar.alafasy")) || RECITERS[0];
   const audioUrl = (br, ed, g) => `https://cdn.islamic.network/quran/audio/${br}/${ed}/${g}.mp3`;
+  /* Spoken Urdu translation: switched off (v1.2.8). The recorded voices available for free did not use the
+     Junagarhi wording shown on screen. The player still supports it if a matching voice is found later:
+     add { id, ur, en, src: ["https://…/{g}.mp3"] } here and bring back the button. */
+  const TR_VOICES = [];
+  const trVoice = () => TR_VOICES.find((v) => v.id === store.get("quran.trAudio", "off")) || null;
+  const pad3 = (n) => String(n).padStart(3, "0");
+  const fillUrl = (tpl, g, s, a) => tpl.replace("{g}", g).replace("{s3}", pad3(s)).replace("{a3}", pad3(a));
+  function urlsFor(it, phase) {
+    if (phase === "tr") { const v = trVoice(); return v ? v.src.map((u) => fillUrl(u, it.g, it.s, it.a)) : []; }
+    return reciter().src.map(([br, ed]) => audioUrl(br, ed, it.bism ? 1 : it.g));
+  }
+  const surahNames = () => { const l = store.get("surahList", null); return l && l.length === 114 ? l : null; };
+  const NATIVE_AUDIO = !!(NATIVE && typeof NATIVE.audioStart === "function");
+  const nativeCall = (fn, ...args) => { try { if (NATIVE_AUDIO && typeof NATIVE[fn] === "function") return NATIVE[fn](...args); } catch (e) {} return null; };
+
   const player = {
-    audio: null, queue: [], i: 0, tryN: 0, onEnd: null, label: "",
+    audio: null, queue: [], i: 0, tryN: 0, phase: "ar", onEnd: null, onNear: null, trWarned: false,
+    ns: null,           // state reported by the phone's media service (APK only)
+    native: NATIVE_AUDIO,
     el() {
       if (!this.audio) {
         this.audio = new Audio(); this.audio.preload = "auto";
-        this.audio.addEventListener("ended", () => this.next(true));
+        this.audio.addEventListener("ended", () => this.ended());
         this.audio.addEventListener("error", () => this.fail());
         this.audio.addEventListener("playing", () => this.bar());
         this.audio.addEventListener("pause", () => this.bar());
+        this.sessionHandlers();
       }
       return this.audio;
     },
-    start(queue, i, onEnd) { this.queue = queue; this.i = Math.max(0, i || 0); this.onEnd = onEnd || null; this.play(); },
-    cur() { return this.queue[this.i]; },
+    /* queue: items from makeQueue; i: start index; onEnd: called when the queue finishes by itself;
+       endG: (APK) last ayah to recite — the phone continues past the page without the screen */
+    start(queue, i, onEnd, endG, onNear) {
+      i = Math.max(0, i || 0);
+      if (this.native) {
+        const first = queue[i]; if (!first) return;
+        const startG = first.bism ? (queue[i + 1] || {}).g : first.g;
+        const last = queue.filter((x) => !x.bism).pop();
+        const v = trVoice(), names = surahNames();
+        const plan = {
+          startG, endG: Math.max(startG, endG || (last ? last.g : startG)),
+          ar: reciter().src.map(([br, ed]) => audioUrl(br, ed, "{g}")),
+          tr: v ? v.src : [],
+          artist: reciterName(), trName: v ? (LANG === "en" ? v.en : v.ur) : "",
+          names: names ? names.map((s) => (LANG === "en" ? s.en : s.ar)) : [],
+          app: C.appNameUr,
+          words: { ayah: t("آیت", "Ayah"), surah: t("سورۃ", "Surah"), tr: t("اردو ترجمہ", "Urdu translation"), bism: "بِسْمِ اللّٰهِ", net: t("انٹرنیٹ نہیں — تلاوت رک گئی", "No internet — recitation paused") }
+        };
+        this.ns = { active: true, playing: false, loading: true, g: startG, s: (first.bism ? queue[i + 1] : first).s, a: (first.bism ? queue[i + 1] : first).a, phase: first.bism ? "bism" : "ar" };
+        this.bar();
+        nativeCall("audioStart", JSON.stringify(plan));
+        return;
+      }
+      this.queue = queue; this.i = i; this.onEnd = onEnd || null; this.onNear = onNear || null; this.play();
+    },
+    cur() {
+      if (this.native) {
+        const s = this.ns; if (!s || !s.active) return null;
+        const nm = (surahNames() || [])[s.s - 1] || {};
+        return { g: s.g, s: s.s, a: s.a, bism: s.phase === "bism", tr: s.phase === "tr", sname: nm.ar || "", sen: nm.en || "" };
+      }
+      const it = this.queue[this.i]; return it ? { ...it, tr: this.phase === "tr" } : it;
+    },
     play() {
-      const it = this.cur(); if (!it) return this.stop();
-      this.tryN = 0; this.load(it);
+      const it = this.queue[this.i]; if (!it) return this.stop();
+      this.phase = "ar"; this.tryN = 0; this.load(it);
+      if (this.i === this.queue.length - 1 && this.onNear) { try { this.onNear(); } catch (e) {} }
     },
     load(it) {
-      const r = reciter(); const [br, ed] = r.src[Math.min(this.tryN, r.src.length - 1)];
-      const a = this.el(); a.src = audioUrl(br, ed, it.bism ? 1 : it.g);
+      const urls = urlsFor(it, this.phase);
+      const a = this.el(); a.src = urls[Math.min(this.tryN, urls.length - 1)];
       const p = a.play(); if (p && p.catch) p.catch((e) => { if (e && e.name === "NotAllowedError") { this.bar(); } });
-      this.mark(it); this.bar(); this.media(it);
+      this.mark(this.cur()); this.bar(); this.media(this.cur());
+    },
+    /* one clip finished: after an Arabic ayah comes its Urdu translation (if switched on), then the next ayah */
+    ended() {
+      const it = this.queue[this.i];
+      if (it && !it.bism && this.phase === "ar" && trVoice()) { this.phase = "tr"; this.tryN = 0; this.load(it); return; }
+      this.next(true);
     },
     fail() {
-      const it = this.cur(); if (!it || !this.queue.length) return;
+      const it = this.queue[this.i]; if (!it || !this.queue.length) return;
       this.tryN++;
-      if (this.tryN < reciter().src.length) { const r = reciter(); const [br, ed] = r.src[this.tryN]; this.audio.src = audioUrl(br, ed, it.bism ? 1 : it.g); this.audio.play().catch(() => {}); return; }
-      toast(navigator.onLine === false ? t("تلاوت کے لیے انٹرنیٹ ضروری ہے", "Recitation needs an internet connection") : t("یہ آیت لوڈ نہیں ہو سکی — اگلی پر جا رہے ہیں", "Couldn't load this ayah — moving on"));
-      if (navigator.onLine === false) { this.pause(); return; }
+      const urls = urlsFor(it, this.phase);
+      if (this.tryN < urls.length) { this.audio.src = urls[this.tryN]; this.audio.play().catch(() => {}); return; }
+      if (navigator.onLine === false) { toast(t("تلاوت کے لیے انٹرنیٹ ضروری ہے", "Recitation needs an internet connection")); this.pause(); return; }
+      if (this.phase === "tr") {
+        if (!this.trWarned) { this.trWarned = true; toast(t("اس آیت کے ترجمے کی آواز نہیں مل سکی — آگے چل رہے ہیں", "Couldn't load the translation audio — moving on")); }
+        this.next(true); return;
+      }
+      toast(t("یہ آیت لوڈ نہیں ہو سکی — اگلی پر جا رہے ہیں", "Couldn't load this ayah — moving on"));
       this.next(true);
     },
     next(auto) {
+      if (this.native) { nativeCall("audioNext"); return; }
       if (this.i < this.queue.length - 1) { this.i++; this.play(); return; }
       const cb = this.onEnd; this.stop(); if (auto && cb) cb();
     },
     prev() {
+      if (this.native) { nativeCall("audioPrev"); return; }
       let i = this.i - 1; while (i > 0 && this.queue[i] && this.queue[i].bism) i--;
       this.i = Math.max(0, i); this.play();
     },
-    toggle() { const a = this.el(); if (a.paused) a.play().catch(() => {}); else a.pause(); this.bar(); },
-    pause() { if (this.audio) this.audio.pause(); this.bar(); },
+    isPaused() { return this.native ? !(this.ns && (this.ns.playing || this.ns.loading)) : (!this.audio || this.audio.paused); },
+    toggle() {
+      if (this.native) { nativeCall("audioToggle"); return; }
+      const a = this.el(); if (a.paused) a.play().catch(() => {}); else a.pause(); this.bar();
+    },
+    pause() { if (this.native) { nativeCall("audioPause"); return; } if (this.audio) this.audio.pause(); this.bar(); },
+    resume() { if (this.native) { nativeCall("audioPlay"); return; } if (this.audio && this.audio.src) this.audio.play().catch(() => {}); this.bar(); },
     stop() {
+      if (this.native) { if (this.ns && this.ns.active) nativeCall("audioStop"); this.ns = null; }
       if (this.audio) { this.audio.pause(); this.audio.removeAttribute("src"); try { this.audio.load(); } catch (e) {} }
-      this.queue = []; this.i = 0; this.onEnd = null;
+      this.queue = []; this.i = 0; this.phase = "ar"; this.onEnd = null; this.onNear = null; this.trWarned = false;
       document.querySelectorAll(".playing").forEach((e) => e.classList.remove("playing"));
       const b = $("#qbar"); if (b) b.remove();
+      try { if ("mediaSession" in navigator) navigator.mediaSession.playbackState = "none"; } catch (e) {}
     },
-    active() { return this.queue.length > 0; },
+    active() { return this.native ? !!(this.ns && this.ns.active) : this.queue.length > 0; },
     mark(it) {
       document.querySelectorAll(".playing").forEach((e) => e.classList.remove("playing"));
+      if (!it) return;
       const el = it.bism ? document.querySelector(`[data-bism="${it.s}"]`) : document.querySelector(`[data-g="${it.g}"]`);
       if (el) {
         el.classList.add("playing");
@@ -1722,13 +1804,42 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         if (r.top < 70 || r.bottom > window.innerHeight - 150) el.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     },
-    media(it) {
+    /* earbuds, headset, Bluetooth and lock-screen buttons (Chrome / installed web app) */
+    sessionHandlers() {
       try {
         if (!("mediaSession" in navigator)) return;
-        navigator.mediaSession.metadata = new MediaMetadata({ title: it.bism ? "بسم اللہ" : `${it.sname || ""} : ${it.a}`, artist: LANG === "en" ? reciter().en : reciter().ur, album: C.appNameUr });
-        navigator.mediaSession.setActionHandler("nexttrack", () => this.next());
-        navigator.mediaSession.setActionHandler("previoustrack", () => this.prev());
+        const ms = navigator.mediaSession;
+        const h = { play: () => this.resume(), pause: () => this.pause(), stop: () => this.stop(), nexttrack: () => this.next(), previoustrack: () => this.prev() };
+        for (const k of Object.keys(h)) { try { ms.setActionHandler(k, h[k]); } catch (e) {} }
       } catch (e) {}
+    },
+    media(it) {
+      try {
+        if (!("mediaSession" in navigator) || !it) return;
+        const v = trVoice();
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: it.bism ? "بسم اللہ" : `${it.sname || ""} : ${it.a}${it.tr ? " — " + t("اردو ترجمہ", "Urdu translation") : ""}`,
+          artist: it.tr && v ? (LANG === "en" ? v.en : v.ur) : reciterName(), album: C.appNameUr,
+          artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }]
+        });
+      } catch (e) {}
+    },
+    /* the phone's media service reports what it is playing (APK only) */
+    onNative(st) {
+      if (!st || !st.active) {
+        const was = this.ns && this.ns.active;
+        this.ns = null;
+        document.querySelectorAll(".playing").forEach((e) => e.classList.remove("playing"));
+        const b = $("#qbar"); if (b) b.remove();
+        if (was && st && st.error === "net") toast(t("تلاوت کے لیے انٹرنیٹ ضروری ہے", "Recitation needs an internet connection"));
+        return;
+      }
+      const moved = !this.ns || this.ns.g !== st.g || this.ns.phase !== st.phase;
+      this.ns = st;
+      if (st.error === "net") toast(t("انٹرنیٹ نہیں — تلاوت رک گئی", "No internet — recitation paused"));
+      if (st.error === "tr" && !this.trWarned) { this.trWarned = true; toast(t("اس آیت کے ترجمے کی آواز نہیں مل سکی — آگے چل رہے ہیں", "Couldn't load the translation audio — moving on")); }
+      if (moved) { this.mark(this.cur()); followPage(); }
+      this.bar();
     },
     bar() {
       if (!this.active()) return;
@@ -1743,15 +1854,41 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       }
       b.dir = LANG === "en" ? "ltr" : "rtl";
       const it = this.cur() || {};
-      const paused = !this.audio || this.audio.paused;
+      const paused = this.isPaused();
+      try { if (!this.native && "mediaSession" in navigator) navigator.mediaSession.playbackState = paused ? "paused" : "playing"; } catch (e) {}
+      const v = trVoice();
+      const sub = it.tr && v ? `${t("اردو ترجمہ", "Urdu translation")} · ${LANG === "en" ? v.en : v.ur}` : reciterName() + (v ? " + " + t("ترجمہ", "translation") : "");
       b.innerHTML = `<div class="qbar-in">
         <button class="qb" data-qb="pv" aria-label="${t("پچھلی آیت", "Previous ayah")}">${ICON.prev}</button>
         <button class="qb main" data-qb="pp" aria-label="${paused ? t("چلائیں", "Play") : t("روکیں", "Pause")}">${paused ? ICON.play : ICON.pause}</button>
         <button class="qb" data-qb="nx" aria-label="${t("اگلی آیت", "Next ayah")}">${ICON.next}</button>
-        <button class="qlabel grow" data-qb="rc"><b>${it.bism ? "بِسْمِ اللّٰهِ" : esc(`${LANG === "en" ? (it.sen || "") : (it.sname || "")} · ${t("آیت", "Ayah")} ${N(it.a || "")}`)}</b><span>${esc(LANG === "en" ? reciter().en : reciter().ur)} ▾</span></button>
+        <button class="qlabel grow" data-qb="rc"><b>${it.bism ? "بِسْمِ اللّٰهِ" : esc(`${LANG === "en" ? (it.sen || t("سورۃ ", "Surah ") + (it.s || "")) : (it.sname || "سورۃ " + N(it.s || ""))} · ${t("آیت", "Ayah")} ${N(it.a || "")}`)}</b><span>${esc(sub)} ▾</span></button>
         <button class="qb" data-qb="x" aria-label="${t("بند کریں", "Close")}">✕</button></div>`;
     }
   };
+  window.__ntAudioEvt = (st) => { try { player.onNative(typeof st === "string" ? JSON.parse(st) : st); } catch (e) {} };
+
+  /* APK: the recitation runs on by itself (even with the screen off). When the screen is on again,
+     the mushaf turns to the page being recited. */
+  let following = false;
+  async function followPage() {
+    if (!player.native || route.name !== "mushaf" || following || document.visibilityState === "hidden") return;
+    const it = player.cur(); if (!it || !it.g || document.querySelector(`[data-g="${it.g}"]`)) return;
+    following = true;
+    try {
+      const pg = await pageOfAyah(it.g);
+      if (pg && route.name === "mushaf" && route.params.page !== pg) go("mushaf", { page: pg }, false);
+    } catch (e) {} finally { following = false; }
+  }
+  async function pageOfAyah(g) {
+    for (const list of pageCache.values()) { const f = list.find((x) => x.g === g); if (f) return f.page; }
+    const off = await offlineRecord(C.QURAN_AR_EDITION);
+    if (off) { const f = off.ayahs.find((x) => x[0] === g); if (f) return f[5]; }
+    const j = await getJSON(`${C.QURAN_API}/ayah/${g}`);
+    return j && j.data ? j.data.page : 0;
+  }
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && player.native) { const st = nativeCall("audioState"); if (st) window.__ntAudioEvt(st); followPage(); } });
+
   /* "Choose reciter" button — on the Quran home, the mushaf and the surah screens */
   const reciterName = () => (LANG === "en" ? reciter().en : reciter().ur);
   function reciterBtnHTML(cls = "btn block") {
@@ -1767,9 +1904,17 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     sh.querySelectorAll("[data-rc]").forEach((b) => b.onclick = () => {
       store.set("quran.reciter", b.dataset.rc); closeSheet();
       document.querySelectorAll("[data-rcname]").forEach((x) => (x.textContent = reciterName()));
-      if (player.active()) player.play();
-      toast(t("قاری: ", "Reciter: ") + (LANG === "en" ? reciter().en : reciter().ur));
+      restartPlayer();
+      toast(t("قاری: ", "Reciter: ") + reciterName());
     });
+  }
+  /* after changing the reciter or translation voice: carry on from the same ayah with the new choice */
+  function restartPlayer() {
+    if (!player.active()) return;
+    if (!player.native) { player.play(); return; }
+    const it = player.cur(); if (!it) return;
+    const endG = player.ns.endG || 6236;
+    player.start([{ g: it.g, s: it.s, a: it.a }], 0, null, endG);
   }
   /* queue for a list of ayahs; a Bismillah clip (Al-Fatiha 1) is played before every surah start except 1 and 9 */
   function makeQueue(ayahs) {
@@ -1973,7 +2118,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     const q = makeQueue(ar);
     player.start(q, fromG ? qIndexOf(q, fromG) : 0, () => {
       if (route.name === "mushaf" && route.params.page === p && p < 604) go("mushaf", { page: p + 1, autoplay: true }, false);
-    });
+    }, 6236, () => { if (p < 604) loadPage(p + 1, C.QURAN_AR_EDITION).catch(() => {}); });
   }
   function jumpSheet(p) {
     const sh = openSheet(`<h2>${t("پارہ یا صفحہ منتخب کریں", "Choose a Para or page")}</h2>
@@ -3132,6 +3277,13 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   go(SCREENS[start] && !["surah", "hsection"].includes(start) ? start : "home", {}, false);
   stats.platformOncePerDay();
   window.__NT.player = player;
+  // APK: recitation still running in the background (e.g. the app was closed and opened again) — show where it is
+  if (player.native) {
+    try {
+      const st = JSON.parse(nativeCall("audioState") || "null");
+      if (st && st.active) { player.ns = st; go("surah", { n: st.s, ayah: st.a }); }
+    } catch (e) {}
+  }
 
   // Service worker (only works on real hosting; ignored in previews)
   if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic/.test(location.hostname)) {
