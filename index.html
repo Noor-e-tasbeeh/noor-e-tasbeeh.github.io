@@ -211,6 +211,10 @@ a { color: var(--gold-soft); }
 .input::placeholder { color: #6f8f82; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
+/* Laptop / desktop (mouse): show every chip on its own line instead of hiding them off to the side */
+@media (any-pointer: fine) {
+  .chips { flex-wrap: wrap; overflow-x: visible; }
+}
 .chip {
   flex: none; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-soft);
   background: var(--panel); color: var(--muted); font-size: 13.5px; line-height: 1.6;
@@ -296,7 +300,10 @@ a { color: var(--gold-soft); }
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);
+  overflow-y: auto; overscroll-behavior: contain;
 }
+.tsb > * { flex-shrink: 0; }
+.tsb > .tsb-tap { flex: 1 0 auto; min-height: 0; padding-block: 6px; }
 .tsb-top { display: flex; gap: 10px; align-items: center; padding: 10px 16px 6px; max-width: 560px; width: 100%; margin: 0 auto; }
 .tsb-top .input { background: rgba(3,19,14,.6); text-align: center; }
 .tsb-targets { display: flex; gap: 8px; justify-content: center; padding: 4px 16px; flex-wrap: wrap; }
@@ -305,10 +312,15 @@ a { color: var(--gold-soft); }
   user-select: none; -webkit-user-select: none; touch-action: manipulation; position: relative; cursor: pointer;
   border: 0; background: transparent; width: 100%; color: var(--text);
 }
-.tsb-ring { position: relative; width: min(74vw, 330px); aspect-ratio: 1; max-width: 100%; display: grid; place-items: center; }
+.tsb-ring {
+  position: relative; aspect-ratio: 1; max-width: 100%; display: grid; place-items: center; flex: none;
+  /* shrinks with the window height too, so the buttons below never fall off the screen */
+  width: clamp(130px, min(74vw, 330px, calc(100vh - 370px)), 330px);
+  width: clamp(130px, min(74vw, 330px, calc(100dvh - 370px)), 330px);
+}
 .tsb-ring svg { position: absolute; inset: 0; transform: rotate(-90deg); width: 100%; height: 100%; }
 .tsb-count {
-  font-family: var(--f-latin); font-size: clamp(76px, 24vw, 128px); line-height: 1; color: var(--gold-soft);
+  font-family: var(--f-latin); font-size: clamp(52px, min(24vw, 14vh), 128px); font-size: clamp(52px, min(24vw, 14dvh), 128px); line-height: 1; color: var(--gold-soft);
   font-variant-numeric: tabular-nums; direction: ltr; text-shadow: 0 4px 30px rgba(214,178,94,.35);
 }
 .tsb-sub { font-size: 13px; color: var(--muted); margin-top: 8px; line-height: 1.8; }
@@ -575,6 +587,22 @@ select.input { appearance: auto; }
 .chip.rcbtn b { color: inherit; }
 .btn.rcbtn { border-color: var(--line); }
 
+/* ---------- short windows (laptop Chrome made small, phone in landscape) ---------- */
+@media (max-height: 640px) {
+  .tsb-top { padding-top: 6px; padding-bottom: 2px; }
+  .tsb-targets { padding-block: 2px; }
+  .tsb-targets .chip { min-height: 32px; }
+  .tsb-hint { margin-top: 6px; line-height: 1.7; }
+  .tsb-keys { margin-top: 2px; line-height: 1.9; }
+  .tsb-sub { margin-top: 2px; }
+  .tsb-bottom { padding-block: 6px 8px; gap: 6px; }
+  .tsb-minus { min-height: 46px; font-size: 17px; }
+  .tsb-row .btn { min-height: 42px; }
+}
+@media (max-height: 480px) {
+  .tsb-hint, .tsb-keys { display: none !important; }
+}
+
 </style>
 </head>
 <body>
@@ -599,7 +627,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.6",
+  version: "1.2.7",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -1112,6 +1140,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   }
 
   const ICON = {
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
     beads: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="4.5" r="1.6"/><circle cx="17.3" cy="6.7" r="1.6"/><circle cx="19.5" cy="12" r="1.6"/><circle cx="17.3" cy="17.3" r="1.6"/><circle cx="6.7" cy="6.7" r="1.6"/><circle cx="4.5" cy="12" r="1.6"/><circle cx="6.7" cy="17.3" r="1.6"/><path d="M12 19v3"/></svg>',
     book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5Z"/><path d="M12 6.5v13"/></svg>',
@@ -1306,6 +1335,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <section class="tsb" id="tsb">
         <div class="tsb-top">
           <button class="iconbtn" data-back aria-label="${t("واپس", "Back")}">${ICON.back}</button>
+          <button class="iconbtn" data-go="home" aria-label="${t("ہوم", "Home")}" title="${t("ہوم", "Home")}">${ICON.home}</button>
           <label class="sr" for="tsbName">${t("تسبیح کا نام", "Tasbeeh name")}</label>
           <input id="tsbName" class="input" maxlength="60" placeholder="${t("تسبیح کا نام لکھیں (مثلاً سبحان اللہ)", "Name this tasbeeh (e.g. SubhanAllah)")}" value="${esc(cur.name)}">
         </div>
@@ -3030,6 +3060,33 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     if (g) { e.preventDefault(); go(g.dataset.go, {}); return; }
     if (e.target.closest("[data-back]")) { e.preventDefault(); back(); }
   });
+  /* Laptop mouse: chip rows (e.g. hadith books) scroll sideways with the wheel and by dragging */
+  document.addEventListener("wheel", (e) => {
+    const row = e.target.closest && e.target.closest(".chips");
+    if (!row || row.scrollWidth <= row.clientWidth + 1 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    const before = row.scrollLeft;
+    row.scrollLeft += e.deltaY;
+    if (row.scrollLeft !== before) e.preventDefault();
+  }, { passive: false });
+  {
+    let drag = null;
+    document.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "mouse" || e.button !== 0) return;
+      const row = e.target.closest && e.target.closest(".chips");
+      if (row && row.scrollWidth > row.clientWidth + 1) drag = { row, x: e.clientX, left: row.scrollLeft, moved: false };
+    });
+    document.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (Math.abs(dx) > 5) drag.moved = true;
+      if (drag.moved) drag.row.scrollLeft = drag.left - dx;
+    });
+    document.addEventListener("pointerup", () => {
+      if (drag && drag.moved) { const stop = (ev) => { ev.stopPropagation(); ev.preventDefault(); }; document.addEventListener("click", stop, { capture: true, once: true }); setTimeout(() => document.removeEventListener("click", stop, true), 50); }
+      drag = null;
+    });
+  }
+
   /* Laptop / desktop keyboard on the Tasbeeh screen:
      Space, Enter, + (also = and numpad +), Arrow Up → +1 ;  − (minus, numpad −), Arrow Down → −1 */
   function tasbeehKey(e) {
