@@ -474,6 +474,34 @@ details.more summary::-webkit-details-marker { display: none; }
 
 /* ---------- Quran: tabs, paras, continue reading ---------- */
 .seg.seg3 { grid-template-columns: repeat(3, 1fr); }
+.seg.seg2 { grid-template-columns: repeat(2, 1fr); }
+
+/* ---------- tafseer sheet (v1.2.9) ---------- */
+.tf-card {
+  background: var(--ivory); color: var(--ink); border-radius: var(--r); border: 1px solid #e6d6a6;
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.tf-card .ar.quran { font-size: 24px; margin: 4px 0; }
+.tf-no { font-size: 18px; color: #8a5a12; white-space: nowrap; }
+.tf-tr { border-bottom: 1px dashed #d9c48c; padding-bottom: 6px; }
+.tf-label {
+  align-self: flex-start; margin-top: 6px; font-size: 13px; font-weight: 700; color: #fff; background: var(--emerald);
+  border-radius: 999px; padding: 0 12px; line-height: 2.1;
+}
+.tf-range { font-size: 12.5px; color: #8a5a12; background: rgba(214,178,94,.18); border-radius: 8px; padding: 0 10px; line-height: 2.1; align-self: flex-start; }
+.tf-text { font-family: var(--f-urdu); font-size: 15.5px; line-height: 2.4; color: var(--ink); text-align: justify; overflow-wrap: anywhere; }
+.tf-text p { margin: 0 0 8px; }
+.tf-text .tf-h { font-weight: 700; color: var(--emerald); }
+sup.fn {
+  display: inline-block; min-width: 1.5em; margin: 0 2px; padding: 0 4px; border-radius: 6px; background: var(--emerald); color: #fff;
+  font-family: var(--f-latin); font-size: 11px; line-height: 1.7; text-align: center; vertical-align: super;
+}
+.tf-credit { margin: 6px 0 0; font-size: 11.5px; line-height: 2; color: var(--ink-soft); }
+.muted-ink { color: var(--ink-soft); }
+.tf-find { padding: 10px 12px; flex-wrap: wrap; }
+.tf-find .input { width: 84px; flex: none; }
+.tf-nav { position: sticky; bottom: calc(-18px - env(safe-area-inset-bottom, 0px)); z-index: 2; background: var(--deep); margin: 0 -16px; padding: 8px 16px; border-top: 1px solid var(--line-soft); }
+.tf-nav .btn:disabled { opacity: .4; }
 .qcont { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r); border: 1px solid var(--line); background: linear-gradient(160deg, #0f4a34, #0a3122 75%); }
 .qmark { display: flex; gap: 8px; align-items: center; }
 .qmark > button.grow { flex: 1; min-width: 0; text-align: start; background: rgba(3,19,14,.45); border: 1px solid var(--line-soft); border-radius: 14px; padding: 8px 12px; display: flex; flex-direction: column; }
@@ -627,7 +655,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.8",
+  version: "1.2.9",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -1933,6 +1961,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     view().innerHTML = topbar(t("قرآن پاک", "Quran Pak")) + `<div class="view" id="qv">
       <div id="qCont">${continueHTML()}</div>
       ${reciterBtnHTML()}
+      <button class="btn block" id="qTafseer">${ICON.book} ${t("تفسیر — احسن البیان / ابن کثیر", "Tafseer — Ahsan-ul-Bayan / Ibn-e-Kaseer")}</button>
       <div class="seg seg3" role="group" aria-label="${t("قرآن کیسے کھولیں", "How to open the Quran")}">
         <button data-qtab="surah" aria-pressed="${tab === "surah"}">${t("سورتیں", "Surahs")}</button>
         <button data-qtab="para" aria-pressed="${tab === "para"}">${t("پارے", "Paras")}</button>
@@ -1942,6 +1971,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <div id="qOff"></div>
       <p class="small muted">${quranCredit()}</p>
     </div>`;
+    $("#qTafseer").onclick = () => { const l = store.get("quran.tafseerLast", { s: 1, a: 1 }); tafseerSheet(l.s, l.a); };
     const redrawCont = () => { $("#qCont").innerHTML = continueHTML(); wireContinue($("#qCont"), redrawCont); };
     wireContinue($("#qCont"), redrawCont);
     document.querySelectorAll("[data-qtab]").forEach((b) => b.onclick = () => {
@@ -2141,8 +2171,10 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         <button class="btn grow" data-am="save">${on ? ICON.bookmarkFill + " " + t("محفوظ ہے", "Saved") : ICON.bookmark + " " + t("آیت محفوظ کریں", "Save ayah")}</button>
         <button class="btn grow" data-am="share">${ICON.share} ${t("شیئر", "Share")}</button>
       </div>
+      <button class="btn block" data-am="tf">${ICON.book} ${t("تفسیر پڑھیں", "Read tafseer")}</button>
       <button class="btn block" data-am="tr">${ICON.book} ${t("ترجمے کے ساتھ سورت میں کھولیں", "Open in the surah with translation")}</button>
       <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`);
+    sh.querySelector('[data-am="tf"]').onclick = () => tafseerSheet(x.s, x.a);
     const withUr = async () => { try { const u = await loadPage(p, C.QURAN_UR_EDITION); const f = u.find((y) => y.g === x.g); return { ...it0, ur: f ? f.text : "" }; } catch (e) { return it0; } };
     sh.querySelector('[data-am="play"]').onclick = () => { closeSheet(); startPageRecitation(p, ar, x.g); };
     sh.querySelector('[data-am="mark"]').onclick = () => { closeSheet(); markSheet({ mode: "mushaf", page: p, juz: x.juz, s: x.s, a: x.a, g: x.g, sname: x.sname, sen: x.sen }); };
@@ -2190,6 +2222,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
           <div class="actions">
             <span class="ref">${esc(ayahRef(it))}</span>
             <button class="rbtn" data-pl="${a.numberInSurah}">${ICON.play} ${t("سنیں", "Listen")}</button>
+            <button class="rbtn" data-tf="${a.numberInSurah}">${ICON.book} ${t("تفسیر", "Tafseer")}</button>
             <button class="rbtn" data-mk2="${a.numberInSurah}">${ICON.bookmarkFill} ${t("یہاں تک پڑھا", "Stopped here")}</button>
             <button class="rbtn ${on ? "on" : ""}" data-bm="${a.numberInSurah}">${on ? ICON.bookmarkFill + " " + t("محفوظ", "Saved") : ICON.bookmark + " " + t("محفوظ کریں", "Save")}</button>
             <button class="rbtn" data-cp="${a.numberInSurah}">${ICON.copy} ${t("کاپی", "Copy")}</button>
@@ -2219,6 +2252,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       $("#sPlay").onclick = () => startAt(1);
       if ($("#sMushaf")) $("#sMushaf").onclick = () => go("mushaf", { page: ar.ayahs[0].page });
       sv.querySelectorAll("[data-pl]").forEach((b) => b.onclick = () => startAt(+b.dataset.pl));
+      sv.querySelectorAll("[data-tf]").forEach((b) => b.onclick = () => tafseerSheet(n, +b.dataset.tf));
       sv.querySelectorAll("[data-mk2]").forEach((b) => b.onclick = () => {
         const x = qAyahs[+b.dataset.mk2 - 1];
         markSheet({ mode: "surah", page: x.page, juz: x.juz || juzOfPage(x.page || 1), s: n, a: x.a, g: x.g, sname: ar.name, sen: ar.englishName });
@@ -2246,6 +2280,145 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     }
   }
   function ayahText(it) { return `${it.ar}\n\n${it.ur}\n\n(${ayahRef(it)})${shareTail()}`; }
+
+  /* ---------- Tafseer (v1.2.9): Ahsan-ul-Bayan + Ibn-e-Kaseer ----------
+     The text files live on our own website (folder tafseer/, made once by tools/prepare-tafseer.py
+     from QuranEnc.com and quran.com, unchanged). Each file is fetched only when needed and the
+     service worker keeps it, so a surah read once opens again without internet. */
+  const AYAH_COUNT = [7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,112,78,118,64,77,227,93,88,69,60,34,30,73,54,45,83,182,88,75,85,54,53,89,59,37,35,38,29,18,45,60,49,62,55,78,96,29,22,24,13,14,11,11,18,12,12,30,52,52,44,28,28,20,56,40,31,50,40,46,42,29,19,36,25,22,17,19,26,30,20,15,21,11,8,8,19,5,8,8,11,11,8,3,9,5,4,7,3,6,3,5,4,5,6];
+  const TF_BASE = "tafseer/";
+  const TF_BOOKS = [
+    { id: "ahsan", ur: "احسن البیان", en: "Ahsan-ul-Bayan" },
+    { id: "ibnkaseer", ur: "ابن کثیر", en: "Ibn-e-Kaseer" }
+  ];
+  const tfBook = () => (TF_BOOKS.some((b) => b.id === store.get("quran.tafseer", "ahsan")) ? store.get("quran.tafseer", "ahsan") : "ahsan");
+  let tfIndexP = null;
+  const tfFileP = new Map();
+  function tfIndex() {
+    if (!tfIndexP) tfIndexP = fetch(TF_BASE + "index.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .catch((e) => { tfIndexP = null; throw e; });
+    return tfIndexP;
+  }
+  async function tfSurah(book, s) {
+    const idx = await tfIndex();
+    const f = idx[book].files.find((x) => s >= x[0] && s <= x[1]);
+    if (!f) throw new Error("no file");
+    const url = `${TF_BASE}${f[2]}?v=${f[3]}`; // the ?v= fingerprint lets the phone keep it for good
+    if (!tfFileP.has(url)) tfFileP.set(url, fetch(url).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .catch((e) => { tfFileP.delete(url); throw e; }));
+    return (await tfFileP.get(url))[String(s)];
+  }
+  /* Ibn-e-Kaseer often explains several ayahs in one passage: return [first, last] ayah of that passage */
+  function tfRange(m, a) {
+    let lo = a, hi = a;
+    while (lo > 1 && m[lo - 2] === m[a - 1]) lo--;
+    while (hi < m.length && m[hi] === m[a - 1]) hi++;
+    return [lo, hi];
+  }
+  /* Show the published text as it is; only line breaks and the footnote numbers [1] are styled */
+  function tfNotesHTML(s) {
+    return esc(s).split(/\n+/).filter((p) => p.trim()).map((p) => `<p>${p.replace(/\[(\d+)\]/g, '<sup class="fn">$1</sup>')}</p>`).join("");
+  }
+  function tfMarkedHTML(s) { return esc(s).replace(/\[(\d+)\]/g, '<sup class="fn">$1</sup>'); }
+  function tfIbnHTML(s) {
+    // Ibn-e-Kaseer passages start with a short heading followed by ٭٭
+    const i = s.indexOf("٭٭");
+    if (i > 0 && i < 140) return `<p class="tf-h">${esc(s.slice(0, i).trim())}</p><p>${esc(s.slice(i + 2).trim())}</p>`;
+    return `<p>${esc(s)}</p>`;
+  }
+  function tafseerCredit(book, idx) {
+    if (book === "ahsan") {
+      const v = idx && idx.ahsan ? idx.ahsan.version : "";
+      return t(`تفسیر احسن البیان — حافظ صلاح الدین یوسف رحمہ اللہ · ترجمہ: مولانا محمد جوناگڑھی رحمہ اللہ · شاہ فہد قرآن کمپلیکس کا اردو نسخہ · ذریعہ: QuranEnc.com (ورژن ${v}) — متن میں کوئی تبدیلی نہیں کی گئی`,
+        `Tafseer Ahsan-ul-Bayan — Hafiz Salahuddin Yusuf · Translation: Maulana Muhammad Junagarhi · King Fahd Complex Urdu edition · Source: QuranEnc.com (version ${v}) — text unchanged`);
+    }
+    return t("تفسیر ابن کثیر — امام ابن کثیر رحمہ اللہ · اردو ترجمہ: مولانا محمد جوناگڑھی رحمہ اللہ · ذریعہ: quran.com — متن میں کوئی تبدیلی نہیں کی گئی",
+      "Tafseer Ibn-e-Kaseer — Imam Ibn Kathir · Urdu translation: Maulana Muhammad Junagarhi · Source: quran.com — text unchanged");
+  }
+  /* Bottom sheet: Arabic ayah, translation, then the chosen tafseer. Opening it never stops the recitation. */
+  async function tafseerSheet(s, a) {
+    s = Math.min(114, Math.max(1, Math.round(+s || 1)));
+    a = Math.min(AYAH_COUNT[s - 1], Math.max(1, Math.round(+a || 1)));
+    const book = tfBook();
+    store.set("quran.tafseerLast", { s, a });
+    const sh = openSheet(`<h2 id="tfTitle">${t("تفسیر", "Tafseer")} · ${t(`سورت ${N(s)} : آیت ${N(a)}`, `Surah ${s} : Ayah ${a}`)}</h2>
+      <div class="seg seg2" role="group" aria-label="${t("تفسیر منتخب کریں", "Choose a tafseer")}">
+        ${TF_BOOKS.map((b) => `<button data-tfb="${b.id}" aria-pressed="${b.id === book}">${t("تفسیر ", "")}${LANG === "en" ? b.en : b.ur}</button>`).join("")}
+      </div>
+      <div id="tfBody" class="tf-card"><div class="spinner"></div></div>
+      <div class="row tf-nav">
+        <button class="btn grow" id="tfPrev">${t("پچھلی آیت", "Previous ayah")}</button>
+        <button class="btn grow" id="tfNext">${t("اگلی آیت", "Next ayah")}</button>
+      </div>
+      <form class="row card tf-find" id="tfFind">
+        <label class="small muted" for="tfS">${t("سورت", "Surah")}</label>
+        <input id="tfS" class="input" type="number" min="1" max="114" inputmode="numeric" value="${s}">
+        <label class="small muted" for="tfA">${t("آیت", "Ayah")}</label>
+        <input id="tfA" class="input" type="number" min="1" max="286" inputmode="numeric" value="${a}">
+        <button class="btn gold" type="submit">${t("کھولیں", "Open")}</button>
+      </form>
+      <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`);
+    sh.querySelectorAll("[data-tfb]").forEach((b) => b.onclick = () => { store.set("quran.tafseer", b.dataset.tfb); tafseerSheet(s, a); });
+    sh.querySelector("#tfFind").onsubmit = (e) => {
+      e.preventDefault();
+      const ns = +sh.querySelector("#tfS").value, na = +sh.querySelector("#tfA").value;
+      if (!(ns >= 1 && ns <= 114)) return toast(t("سورت نمبر ۱ سے ۱۱۴ تک لکھیں", "Enter a surah number from 1 to 114"));
+      if (!(na >= 1 && na <= AYAH_COUNT[ns - 1])) return toast(t(`اس سورت میں ${N(AYAH_COUNT[ns - 1])} آیات ہیں`, `This surah has ${AYAH_COUNT[ns - 1]} ayahs`));
+      tafseerSheet(ns, na);
+    };
+    let range = [a, a];
+    const prev = () => { const p = range[0] - 1; return p >= 1 ? [s, p] : s > 1 ? [s - 1, AYAH_COUNT[s - 2]] : null; };
+    const next = () => { const x = range[1] + 1; return x <= AYAH_COUNT[s - 1] ? [s, x] : s < 114 ? [s + 1, 1] : null; };
+    const wireNav = () => {
+      const p = prev(), n = next();
+      const bp = sh.querySelector("#tfPrev"), bn = sh.querySelector("#tfNext");
+      bp.disabled = !p; bn.disabled = !n;
+      bp.onclick = () => p && tafseerSheet(p[0], p[1]);
+      bn.onclick = () => n && tafseerSheet(n[0], n[1]);
+    };
+    wireNav();
+    const body = sh.querySelector("#tfBody");
+    // Arabic + the app's own Junagarhi translation (saved copy or alquran.cloud); the tafseer itself comes from our own files
+    const [quran, tf, idx] = await Promise.all([
+      surahData(s).catch(() => null),
+      tfSurah(book, s).catch(() => null),
+      tfIndex().catch(() => null)
+    ]);
+    if (!sh.isConnected) return;
+    if (!tf) {
+      body.innerHTML = `<div class="notice"><b>${t("تفسیر لوڈ نہیں ہو سکی۔", "Couldn't load the tafseer.")}</b><br>${t("انٹرنیٹ کنکشن چیک کریں۔ جو سورت ایک بار کھل جائے، اس کی تفسیر بعد میں بغیر انٹرنیٹ کے بھی کھلتی ہے۔", "Check your internet connection. A surah opened once also opens later without internet.")}
+        <div style="margin-top:8px"><button class="btn" id="tfRetry">${t("دوبارہ کوشش کریں", "Try again")}</button></div></div>`;
+      body.querySelector("#tfRetry").onclick = () => tafseerSheet(s, a);
+      return;
+    }
+    const arA = quran && quran[0] ? quran[0] : null, urA = quran && quran[1] ? quran[1] : null;
+    const sname = arA ? (LANG === "en" ? arA.englishName : arA.name) : "";
+    const arOf = (no) => { if (!arA || !arA.ayahs[no - 1]) return ""; const x = arA.ayahs[no - 1].text; return no === 1 && s !== 1 && s !== 9 ? x.replace(BISMILLAH_RE, "") : x; };
+    let html = "";
+    if (book === "ahsan") {
+      const [trMarked, notes] = tf[a - 1];
+      html = `${arA ? `<div class="ar quran">${esc(arOf(a))}</div>` : ""}
+        <div class="ur tf-tr" ${U}>${tfMarkedHTML(trMarked)}</div>
+        <div class="tf-label">${t("تفسیر احسن البیان", "Tafseer Ahsan-ul-Bayan")}</div>
+        <div class="tf-text" ${U}>${notes.trim() ? tfNotesHTML(notes) : `<p class="muted-ink">${t("اس آیت پر احسن البیان میں کوئی حاشیہ نہیں۔", "Ahsan-ul-Bayan has no note on this ayah.")}</p>`}</div>`;
+    } else {
+      range = tfRange(tf.m, a);
+      const [lo, hi] = range;
+      const ayahs = [];
+      for (let no = lo; no <= hi; no++) ayahs.push(no);
+      html = `${lo !== hi ? `<div class="tf-range">${t(`یہ تفسیر آیت ${N(lo)} تا ${N(hi)} کی ایک ساتھ ہے`, `This passage explains ayahs ${lo}–${hi} together`)}</div>` : ""}
+        ${ayahs.map((no) => `${arA ? `<div class="ar quran">${esc(arOf(no))} <span class="tf-no">﴿${N(no)}﴾</span></div>` : ""}
+          ${urA && urA.ayahs[no - 1] ? `<div class="ur tf-tr" ${U}>${esc(urA.ayahs[no - 1].text)}</div>` : ""}`).join("")}
+        <div class="tf-label">${t("تفسیر ابن کثیر", "Tafseer Ibn-e-Kaseer")}</div>
+        <div class="tf-text" ${U}>${tfIbnHTML(tf.p[tf.m[a - 1]])}</div>`;
+      sh.querySelector("#tfTitle").innerHTML = `${t("تفسیر", "Tafseer")} · ${esc(sname)} ${lo !== hi ? t(`آیات ${N(lo)}–${N(hi)}`, `Ayahs ${lo}–${hi}`) : t(`آیت ${N(a)}`, `Ayah ${a}`)}`;
+    }
+    if (book === "ahsan" && sname) sh.querySelector("#tfTitle").innerHTML = `${t("تفسیر", "Tafseer")} · ${esc(sname)} ${t(`آیت ${N(a)}`, `Ayah ${a}`)}`;
+    if (!arA) html = `<p class="small muted-ink">${t("عربی متن کے لیے انٹرنیٹ چاہیے (یا «پورا قرآن فون میں محفوظ کریں»)۔", "The Arabic text needs internet (or “Save the whole Quran on this phone”).")}</p>` + html;
+    body.innerHTML = html + `<p class="tf-credit">${esc(tafseerCredit(book, idx))}</p>`;
+    wireNav();
+    sh.scrollTop = 0;
+  }
   function shareTail() {
     return `\n\n— ${C.appNameUr} | ${C.appName}` + (C.APP_DOWNLOAD_URL ? `\n📥 ${C.APP_DOWNLOAD_NAME || t("ایپ ڈاؤن لوڈ کریں", "Download the app")}:\n${C.APP_DOWNLOAD_URL}` : "");
   }

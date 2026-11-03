@@ -1,5 +1,5 @@
 /* Noor-e-Tasbeeh service worker — offline shell + cached Quran/Hadith pages */
-const VERSION = "1.2.8-a9037fd2";
+const VERSION = "1.2.9-d451651e";
 const SHELL = "nt-shell-" + VERSION;
 const DATA = "nt-data-v1";
 const SHELL_FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
@@ -16,6 +16,17 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
+  // Tafseer files (v1.2.9): the name carries a ?v= fingerprint, so once on the phone they are kept for good
+  if (url.origin === location.origin && url.pathname.includes("/tafseer/") && url.searchParams.has("v")) {
+    e.respondWith(caches.open(DATA).then(async (c) => {
+      const hit = await c.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok) c.put(req, res.clone());
+      return res;
+    }));
+    return;
+  }
   // App shell: network first (so updates arrive), cache as fallback offline
   if (url.origin === location.origin) {
     e.respondWith(fetch(req).then((res) => { const copy = res.clone(); caches.open(SHELL).then((c) => c.put(req, copy)); return res; })
