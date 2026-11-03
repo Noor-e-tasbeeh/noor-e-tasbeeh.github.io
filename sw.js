@@ -1,5 +1,5 @@
 /* Noor-e-Tasbeeh service worker — offline shell + cached Quran/Hadith pages */
-const VERSION = "1.3.2-ff8c012b";
+const VERSION = "1.3.3-9ef85615";
 const SHELL = "nt-shell-" + VERSION;
 const DATA = "nt-data-v1";
 const SHELL_FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];

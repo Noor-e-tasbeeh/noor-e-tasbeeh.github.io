@@ -699,7 +699,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.3.2",
+  version: "1.3.3",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -3019,8 +3019,9 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       shareSheet({ kind: "hadith", ar: h.ar, ur: h.ur, ref: hadithRef(h), text: hadithText(h) });
     });
   }
+  const passOnLine = () => t("«بَلِّغُوْا عَنِّيْ وَلَوْ اٰيَةً» — اسے آگے شیئر کریں، سب تک پہنچائیں۔", "“Convey from me, even if it is one verse” (Bukhari 3461) — please pass it on.");
   function hadithText(h, passOn) {
-    const pass = passOn ? "\n\n" + t("«بَلِّغُوْا عَنِّيْ وَلَوْ اٰيَةً» — اسے آگے شیئر کریں، سب تک پہنچائیں۔", "“Convey from me, even if it is one verse” (Bukhari 3461) — please pass it on.") : "";
+    const pass = passOn ? "\n\n" + passOnLine() : "";
     return `${h.ar}\n\n${h.ur || ""}\n\n(${hadithRef(h)})${pass}${shareTail()}`;
   }
 
@@ -3186,7 +3187,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       </div>
       <p class="small muted">${t("روزانہ حدیث صحیح البخاری کی منتخب احادیث میں سے ہر دن بدلتی ہے اور پورا دن ایک ہی رہتی ہے۔ متن: fawazahmed0/hadith-api (اردو مترجم کا نام ماخذ میں درج نہیں)۔ اردو متن میں سند (راویوں کا سلسلہ) بھی شامل ہو سکتی ہے۔",
         "The daily hadith changes each day from a selection of Sahih al-Bukhari and stays the same all day. Text: fawazahmed0/hadith-api (the source does not name the Urdu translator). The Urdu text may include the chain of narrators.")}</p>`;
-    const payload = { kind: "hadith", ar: h.ar, ur: h.ur, ref: hadithRef(h), text: hadithText(h, true), title: t("آج کی حدیث", "Hadith of the Day") };
+    const payload = { kind: "hadith", ar: h.ar, ur: h.ur, ref: hadithRef(h), text: hadithText(h, true), note: passOnLine(), title: t("آج کی حدیث", "Hadith of the Day") };
     $("#dAny").onclick = () => shareAny(payload);
     $("#dWa").onclick = () => shareWhatsApp(payload);
     $("#dImg").onclick = () => shareSheet(payload);
@@ -3283,11 +3284,18 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     for (let i = 0; i < 16; i++) { const a = (Math.PI / 8) * i; const rr = i % 2 ? r * 0.72 : r; ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
     ctx.closePath(); fill ? ctx.fill() : ctx.stroke();
   }
+  /* Caption sent WITH a share image (v1.3.3): the ayah/hadith is already in the picture, so the caption
+     is kept short — the reference and the clickable app link first. Long captions get cut or dropped by
+     WhatsApp, which used to lose the link at the end. Text-only shares still send the full text. */
+  function imgCaption(p) {
+    const head = (p.ref ? `${p.ref}` : "") + (p.note ? `\n\n${p.note}` : "");
+    return (head + shareTail()).replace(/^\n+/, "");
+  }
   function waLink(text) { return "https://wa.me/?text=" + encodeURIComponent(text); }
   async function nativeShare(p, blob) {
     try {
       if (!blob) blob = await makeCard(p);
-      NATIVE.shareImage(await blobToB64(blob), p.text);
+      NATIVE.shareImage(await blobToB64(blob), imgCaption(p));
     } catch (e) { NATIVE.shareText(p.text); }
   }
   /* "Share with anyone": the phone's own share menu (every installed app) */
@@ -3297,14 +3305,14 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     try {
       const blob = await makeCard(p);
       file = new File([blob], "noor-e-tasbeeh.png", { type: "image/png" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: p.text }); return; }
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: imgCaption(p) }); return; }
     } catch (e) { if (e && e.name === "AbortError") return; }
     try { if (navigator.share) { await navigator.share({ text: p.text }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
     shareSheet(p);
   }
   async function shareWhatsApp(p) {
     if (NATIVE && NATIVE.shareImageTo) {
-      try { const blob = await makeCard(p); NATIVE.shareImageTo(await blobToB64(blob), p.text, "com.whatsapp"); return; }
+      try { const blob = await makeCard(p); NATIVE.shareImageTo(await blobToB64(blob), imgCaption(p), "com.whatsapp"); return; }
       catch (e) { /* fall through */ }
     }
     if (NATIVE) { nativeShare(p); return; }
@@ -3312,7 +3320,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       const blob = await makeCard(p);
       const file = new File([blob], "noor-e-tasbeeh.png", { type: "image/png" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: p.text });
+        await navigator.share({ files: [file], text: imgCaption(p) });
         return;
       }
     } catch (e) { if (e && e.name === "AbortError") return; }
@@ -3338,7 +3346,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`;
     const sf = sh.querySelector("[data-sfile]");
     if (sf && NATIVE) sf.onclick = () => nativeShare(p, blob);
-    else if (sf) sf.onclick = async () => { try { await navigator.share({ files: [file], text: p.text }); } catch (e) { if (e.name !== "AbortError") toast(t("شیئر نہیں ہو سکا", "Couldn't share")); } };
+    else if (sf) sf.onclick = async () => { try { await navigator.share({ files: [file], text: imgCaption(p) }); } catch (e) { if (e.name !== "AbortError") toast(t("شیئر نہیں ہو سکا", "Couldn't share")); } };
     sh.querySelector("[data-scopy]").onclick = () => copyText(p.text);
   }
 
@@ -3991,7 +3999,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   stats.platformOncePerDay();
   window.__NT.player = player;
   window.__NT.nzPageUrl = nzPageUrl;
-  window.__NT.makeCard = makeCard; window.__NT.shareTail = shareTail;
+  window.__NT.makeCard = makeCard; window.__NT.shareTail = shareTail; window.__NT.imgCaption = imgCaption;
   // APK: recitation still running in the background (e.g. the app was closed and opened again) — show where it is
   if (player.native) {
     try {
