@@ -699,7 +699,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.3.3",
+  version: "1.3.4",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -3284,12 +3284,12 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     for (let i = 0; i < 16; i++) { const a = (Math.PI / 8) * i; const rr = i % 2 ? r * 0.72 : r; ctx.lineTo(cx + rr * Math.cos(a), cy + rr * Math.sin(a)); }
     ctx.closePath(); fill ? ctx.fill() : ctx.stroke();
   }
-  /* Caption sent WITH a share image (v1.3.3): the ayah/hadith is already in the picture, so the caption
-     is kept short — the reference and the clickable app link first. Long captions get cut or dropped by
-     WhatsApp, which used to lose the link at the end. Text-only shares still send the full text. */
+  /* Caption sent WITH a share image (v1.3.4): only the clickable app link. The ayah/hadith, reference and
+     name are already in the picture. Text-only shares (WhatsApp text, Copy) still send the full text. */
   function imgCaption(p) {
-    const head = (p.ref ? `${p.ref}` : "") + (p.note ? `\n\n${p.note}` : "");
-    return (head + shareTail()).replace(/^\n+/, "");
+    // owner's choice: with a picture send ONLY the app link — nothing else
+    if (!C.SITE_URL) return "";
+    return `📲 ${t("ایپ کھولیں / ڈاؤن لوڈ کریں", "Open / download the app")}:\n${C.SITE_URL}`;
   }
   function waLink(text) { return "https://wa.me/?text=" + encodeURIComponent(text); }
   async function nativeShare(p, blob) {
