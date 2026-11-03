@@ -1,5 +1,5 @@
 /* Noor-e-Tasbeeh service worker — offline shell + cached Quran/Hadith pages */
-const VERSION = "1.2.9-d451651e";
+const VERSION = "1.3.0-16dc5fe7";
 const SHELL = "nt-shell-" + VERSION;
 const DATA = "nt-data-v1";
 const SHELL_FILES = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/icon-512.png"];
@@ -16,8 +16,9 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Tafseer files (v1.2.9): the name carries a ?v= fingerprint, so once on the phone they are kept for good
-  if (url.origin === location.origin && url.pathname.includes("/tafseer/") && url.searchParams.has("v")) {
+  // Tafseer files (v1.2.9) and book pages of «نمازِ نبوی» (v1.3.0): the name carries a ?v= fingerprint,
+  // so once on the phone they are kept for good
+  if (url.origin === location.origin && /\/(tafseer|namaz)\//.test(url.pathname) && url.searchParams.has("v")) {
     e.respondWith(caches.open(DATA).then(async (c) => {
       const hit = await c.match(req);
       if (hit) return hit;

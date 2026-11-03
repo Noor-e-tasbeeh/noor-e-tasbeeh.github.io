@@ -476,6 +476,37 @@ details.more summary::-webkit-details-marker { display: none; }
 .seg.seg3 { grid-template-columns: repeat(3, 1fr); }
 .seg.seg2 { grid-template-columns: repeat(2, 1fr); }
 
+/* ---------- Namaz ka tareeqa — book «نمازِ نبوی» (v1.3.0) ---------- */
+.nz-book { display: flex; gap: 12px; align-items: flex-start; border-color: var(--line); }
+.nz-ic { flex: none; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; background: var(--emerald); color: #fff; }
+.nz-ic svg { width: 26px; height: 26px; }
+.nz-title { font-size: 21px; color: var(--gold-soft); line-height: 1.9; }
+.nz-sub { font-size: 14px; color: var(--gold); line-height: 1.9; }
+.nz-credit { margin-top: 4px; }
+.nz-find { padding: 10px 12px; flex-wrap: wrap; }
+.nz-toc { display: flex; flex-direction: column; gap: 4px; }
+.nz-row {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: right; min-height: 44px;
+  background: var(--panel); border: 1px solid var(--line-soft); border-radius: 12px; padding: 4px 12px; color: var(--text);
+  font-family: var(--f-urdu); font-size: 14.5px; line-height: 2.1;
+}
+.nz-row.ch { margin-top: 8px; background: var(--panel-2); border-color: var(--line); color: var(--gold-soft); font-weight: 700; font-size: 15.5px; }
+.nz-row.tp { margin-right: 18px; width: calc(100% - 18px); }
+.nz-row .nz-t { flex: 1; min-width: 0; }
+.nz-row .nz-t small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400; line-height: 1.8; }
+.nz-row .nz-p { flex: none; min-width: 42px; text-align: center; font-size: 13px; color: var(--gold); background: rgba(214,178,94,.12); border-radius: 8px; line-height: 2; font-weight: 400; }
+:root[lang="en"] .nz-row { text-align: right; }
+.nz-where { font-family: var(--f-urdu); font-size: 13.5px; line-height: 2; color: var(--muted); text-align: center; }
+.nz-where b { color: var(--gold-soft); }
+.nz-pagebox {
+  background: #fff; border-radius: 10px; border: 1px solid #e6d6a6; overflow: hidden; width: 100%;
+  display: grid; place-items: center; min-height: 200px; box-shadow: 0 8px 22px rgba(0,0,0,.25);
+}
+.nz-pagebox img { display: block; width: 100%; height: auto; }
+.nz-pagebox.zoom { overflow: auto; place-items: start; aspect-ratio: auto !important; max-height: 78vh; }
+.nz-pagebox.zoom img { width: 175%; max-width: none; }
+.nz-pagebox .notice { margin: 12px; }
+
 /* ---------- tafseer sheet (v1.2.9) ---------- */
 .tf-card {
   background: var(--ivory); color: var(--ink); border-radius: var(--r); border: 1px solid #e6d6a6;
@@ -655,7 +686,7 @@ select.input { appearance: auto; }
 const APP_CONFIG = {
   appName: "Noor-e-Tasbeeh",
   appNameUr: "نورِ تسبیح",
-  version: "1.2.9",
+  version: "1.3.0",
 
   /* Contact email shown on the "About the App" screen */
   CONTACT_EMAIL: "kashif.sid1@gmail.com",
@@ -1075,6 +1106,324 @@ const ASMA_UL_HUSNA = [
 
 if (typeof module !== "undefined") module.exports = ASMA_UL_HUSNA;
 
+/*
+ * Namaz-e-Nabawi ﷺ — صحیح احادیث کی روشنی میں (Darussalam, jadeed edition)
+ * Tarteeb: Dr. Shafiq-ur-Rehman · Tahqeeq-o-Takhreej: Abu Tahir Hafiz Zubair Ali Zai
+ * Tasheeh-o-Tanqeeh: Hafiz Salahuddin Yusuf, Abdul Samad Rafiqi · Maulana Abdul Wali Khan
+ * Electronic copy: KitaboSunnat.com (published there with the publisher's written permission,
+ * free for da'wah, not for commercial use).
+ *
+ * The book is shown as its own scanned pages (nothing retyped). This file only holds the
+ * table of contents exactly as printed on book pages 6–20: [title, book page, level]
+ * level 0 = main chapter, 1 = topic inside it.
+ * PDF / image number = book page − 1 (checked on every page: book 177 = image 176, 379 = 378).
+ */
+const NAMAZ_BOOK = {
+  title: "نمازِ نبوی",
+  sub: "صحیح احادیث کی روشنی میں",
+  credit: "ترتیب: ڈاکٹر شفیق الرحمٰن · تحقیق و تخریج: ابو طاہر حافظ زبیر علی زئی · تصحیح و تنقیح: حافظ صلاح الدین یوسف، عبدالصمد رفیقی · مولانا عبدالولی خان · ناشر: دارالسلام · الیکٹرانک نسخہ: KitaboSunnat.com",
+  pages: 378,          // images 1..378
+  offset: 1,           // book page = image + 1
+  firstBookPage: 2,
+  lastBookPage: 379,
+  toc: [
+    ["عرضِ ناشر", 21, 0],
+    ["ابتدائیہ", 25, 0],
+    ["مقدمۃ التحقیق (جدید ایڈیشن)", 31, 0],
+    ["اکاذیب", 32, 1],
+    ["موضوع احادیث (من گھڑت روایتیں)", 34, 1],
+    ["ضعیف روایات", 36, 1],
+    ["تناقضات", 37, 1],
+    ["کتاب و سنت کی اتباع کا حکم", 39, 0],
+    ["حدیث کے معاملے میں چھان بین اور احتیاط", 41, 1],
+    ["خطبۂ رحمۃ للعالمین ﷺ", 47, 0],
+    ["نماز: فرضیت، فضیلت اور اہمیت", 48, 0],
+    ["اولاد کو نماز سکھانے کا حکم", 48, 1],
+    ["ترکِ نماز، کفر کا اعلان ہے", 48, 1],
+    ["فضیلتِ نماز", 50, 1],
+    ["نمازی اور شہید", 54, 1],
+    ["اہمیتِ نماز", 55, 1],
+    ["احکامِ طہارت", 59, 0],
+    ["پانی کے احکام", 59, 1],
+    ["رفعِ حاجت کے آداب و مسائل", 61, 0],
+    ["بیت الخلا میں جاتے وقت کی دعا", 61, 1],
+    ["بیت الخلا سے نکلتے وقت کی دعا", 61, 1],
+    ["رفعِ حاجت کے مسائل", 62, 1],
+    ["پیشاب کے چھینٹوں سے بچنے کی سخت تاکید", 64, 1],
+    ["نجاستوں کی تطہیر کا بیان", 66, 0],
+    ["حیض آلود کپڑے کا حکم", 66, 1],
+    ["منی کا دھونا", 67, 1],
+    ["شیر خوار بچے کا پیشاب", 67, 1],
+    ["نجاست آلود جوتا", 67, 1],
+    ["کتے کا جھوٹا", 68, 1],
+    ["مردار کا چمڑا", 68, 1],
+    ["بلی کا جھوٹا", 69, 1],
+    ["سونے چاندی کے برتن میں کھانا", 69, 1],
+    ["جنابت اور حیض سے متعلقہ احکام و مسائل", 70, 0],
+    ["صحبت اور غسلِ جنابت", 70, 1],
+    ["عورت کو بھی احتلام ہوتا ہے", 71, 1],
+    ["جنبی عورت کے بالوں کا مسئلہ", 72, 1],
+    ["جنبی سے میل جول اور مصافحہ جائز ہے", 73, 1],
+    ["حائضہ سے جماع کرنے کی ممانعت", 74, 1],
+    ["مذی کے خارج ہونے سے غسل واجب نہیں ہوتا", 75, 1],
+    ["مذی، منی اور ودی میں فرق", 75, 1],
+    ["سیلانِ رحم موجبِ غسل نہیں", 76, 1],
+    ["حائضہ کو چھونا اور اس کے ساتھ کھانا جائز ہے", 76, 1],
+    ["جنبی کے قرآن پڑھنے کی کراہت", 77, 1],
+    ["کیا حائضہ قرآن کی تلاوت کر سکتی ہے؟", 78, 1],
+    ["استحاضہ کا مسئلہ", 79, 1],
+    ["حائضہ کے لیے نماز اور روزے کی ممانعت", 80, 1],
+    ["نفاس کا حکم", 81, 1],
+    ["غسل کا بیان", 82, 0],
+    ["غسلِ جنابت کا طریقہ", 82, 1],
+    ["دیگر غسل", 83, 1],
+    ["جمعہ کے دن غسل", 83, 1],
+    ["میت کو غسل دینے والا غسل کرے", 84, 1],
+    ["نو مسلم کے لیے غسل", 85, 1],
+    ["عیدین کے روز غسل", 85, 1],
+    ["احرام کا غسل", 85, 1],
+    ["مکے میں داخل ہوتے وقت غسل کرنا", 86, 1],
+    ["مسواک کا بیان", 86, 1],
+    ["وضو کا بیان", 87, 0],
+    ["نیند سے جاگ کر پہلے ہاتھ دھونا", 87, 1],
+    ["تین بار ناک جھاڑنا", 87, 1],
+    ["مسنون وضو کی مکمل ترتیب", 88, 1],
+    ["تنبیہات", 91, 1],
+    ["وضو کے بعد کی مسنون دعائیں", 92, 1],
+    ["وضو کی خود ساختہ دعائیں", 93, 1],
+    ["وضو کے دیگر مسائل", 93, 1],
+    ["مسنون وضو سے گناہوں کی بخشش", 94, 1],
+    ["خشک ایڑیوں کو عذاب", 95, 1],
+    ["وضو سے بلندیٔ درجات", 96, 1],
+    ["تحیۃ الوضو پڑھنے کی فضیلت", 96, 1],
+    ["ایک وضو سے کئی نمازیں ادا کرنا", 97, 1],
+    ["دودھ پینے سے کلی کرنا", 97, 1],
+    ["موزوں وغیرہ پر مسح سے متعلق احکام و مسائل", 98, 1],
+    ["جرابوں پر مسح کرنے کا بیان", 99, 1],
+    ["صحابہ رضی اللہ عنہم کا جرابوں پر مسح کرنا", 99, 1],
+    ["لغتِ عرب سے «جورب» کے معنی", 100, 1],
+    ["پگڑی پر مسح", 100, 1],
+    ["نواقضِ وضو", 101, 0],
+    ["مذی خارج ہونے سے وضو", 101, 1],
+    ["شرمگاہ کو ہاتھ لگانے سے وضو", 101, 1],
+    ["نیند سے وضو", 102, 1],
+    ["ہوا خارج ہونے سے وضو", 102, 1],
+    ["قے، نکسیر اور وضو", 103, 1],
+    ["تیمم کا بیان", 105, 0],
+    ["جنابت کی حالت میں تیمم", 105, 1],
+    ["تیمم کا طریقہ", 107, 1],
+    ["نمازی کا لباس", 109, 0],
+    ["مساجد کے احکام", 114, 0],
+    ["مسجد کی فضیلت", 114, 1],
+    ["بعض مساجد میں نمازوں کا ثواب", 115, 1],
+    ["تحیۃ المسجد (مسجد کا تحفہ)", 116, 1],
+    ["پیاز اور لہسن کھا کر مسجد میں آنے کی ممانعت", 116, 1],
+    ["مسجد میں تھوکنا", 117, 1],
+    ["مسجد میں سونا", 118, 1],
+    ["مسجد میں خرید و فروخت", 118, 1],
+    ["مسجد میں جانے کی فضیلت", 118, 1],
+    ["مسجد سے دل لگانے والے کے لیے عظیم خوشخبری", 119, 1],
+    ["مساجد میں خوشبو کا اہتمام کرنا", 120, 1],
+    ["مسجد میں آ کر نماز ادا کرنے والوں کے لیے خوشخبری", 121, 1],
+    ["مسجد کی خبر گیری کرنے والا مومن ہے", 121, 1],
+    ["قبرستان اور حمام میں نماز پڑھنے کی ممانعت", 121, 1],
+    ["مسجد میں داخل ہونے کی دعا", 122, 1],
+    ["مسجد سے نکلنے کی دعا", 122, 1],
+    ["مسجد میں بلند آواز سے باتیں کرنا منع ہے", 123, 1],
+    ["اوقاتِ نماز", 124, 0],
+    ["نمازِ پنجگانہ کے اوقات", 124, 1],
+    ["نمازِ فجر اندھیرے میں پڑھنی چاہیے", 125, 1],
+    ["گرمی اور سردی کے موسم میں نمازِ ظہر کے اوقات", 126, 1],
+    ["نمازِ جمعہ کا وقت", 127, 1],
+    ["نمازِ عصر کا وقت", 128, 1],
+    ["نمازِ مغرب کا وقت", 128, 1],
+    ["نمازِ عشاء کا وقت", 129, 1],
+    ["ائمۂ مساجد کو نماز اول وقت میں پڑھانی چاہیے", 129, 1],
+    ["نماز کے ممنوعہ اوقات", 130, 1],
+    ["فوت شدہ نمازوں کا حکم", 132, 1],
+    ["سفر میں اذان دے کر نماز پڑھنا", 133, 1],
+    ["نمازیں مجبوراً فوت ہو جائیں تو کیسے پڑھیں؟", 134, 1],
+    ["اذان و اقامت", 135, 0],
+    ["اذان کی ابتدا", 135, 1],
+    ["اذان کے جفت کلمات", 136, 1],
+    ["فجر کی اذان", 136, 1],
+    ["اقامت کے طاق کلمات", 138, 1],
+    ["دوہری اذان", 139, 1],
+    ["اذان اور مؤذن کے فضائل", 140, 1],
+    ["اذان کا جواب دینا", 141, 1],
+    ["اذان کے بعد کی دعائیں", 142, 1],
+    ["وسیلے کی تشریح", 143, 1],
+    ["دعائے اذان میں خود ساختہ کلمات کے اضافے کی حقیقت", 144, 1],
+    ["اذان و اقامت کے دیگر مسائل", 145, 1],
+    ["قبلہ اور سترہ", 150, 0],
+    ["احکامِ قبلہ", 150, 1],
+    ["سترے کا بیان", 151, 1],
+    ["نمازی کے آگے سے گزرنے کا گناہ", 153, 1],
+    ["نماز باجماعت", 155, 0],
+    ["اہمیت", 155, 1],
+    ["عورتوں کو مسجد میں آنے کی اجازت", 157, 1],
+    ["نماز باجماعت کے متفرق مسائل", 157, 1],
+    ["صفوں میں مل کر کھڑا ہونے کا حکم", 159, 1],
+    ["صفوں کی ترتیب", 164, 1],
+    ["ستونوں کے درمیان صف بنانا", 165, 1],
+    ["صف کے پیچھے اکیلے نماز پڑھنا", 165, 1],
+    ["صف بندی میں مراتب کا لحاظ رکھنا", 166, 1],
+    ["امامت کا بیان", 167, 1],
+    ["زیادہ لمبی نماز پر نبی کریم ﷺ کا غصہ", 168, 1],
+    ["نماز کے لیے پرسکون انداز سے آنا", 169, 1],
+    ["اماموں پر وبال", 170, 1],
+    ["نماز پڑھا کر امام مقتدیوں کی طرف منہ پھیرے", 171, 1],
+    ["امام کی اقتدا کے احکام", 172, 1],
+    ["امام کو لقمہ دینا", 173, 1],
+    ["عورت کی امامت", 173, 1],
+    ["امامت کے چند مسائل", 174, 1],
+    ["نمازِ نبوی: تکبیرِ اولیٰ سے سلام تک", 177, 0],
+    ["گیارہ صحابۂ کرام رضی اللہ عنہم کی شہادت", 177, 1],
+    ["نماز کی نیت", 178, 1],
+    ["قیام", 181, 1],
+    ["تکبیرِ اولیٰ", 183, 1],
+    ["سینے پر ہاتھ باندھنا", 184, 1],
+    ["عورتوں اور مردوں کی ہیئتِ نماز میں کوئی فرق نہیں", 185, 1],
+    ["سینے پر ہاتھ باندھنے کے بعد کی دعائیں", 185, 1],
+    ["نماز اور سورۂ فاتحہ", 190, 1],
+    ["آمین کا مسئلہ", 192, 1],
+    ["آدابِ تلاوت", 194, 1],
+    ["نماز کی مسنون قراءت", 196, 1],
+    ["سورۂ اخلاص کی اہمیت", 197, 1],
+    ["نمازِ جمعہ اور عیدین میں تلاوت", 197, 1],
+    ["جمعے کے دن نمازِ فجر میں تلاوت", 198, 1],
+    ["نمازِ فجر میں تلاوت", 198, 1],
+    ["عصر و ظہر کی نماز میں قراءت", 200, 1],
+    ["نمازِ مغرب میں قراءت", 202, 1],
+    ["نمازِ عشاء میں قراءت", 202, 1],
+    ["مختلف آیات کا جواب", 203, 1],
+    ["نماز میں شیطانی وسوسے کا علاج", 204, 1],
+    ["نماز میں رونا", 205, 1],
+    ["رفع الیدین", 205, 1],
+    ["رفع الیدین نہ کرنے والوں کے دلائل کا تجزیہ", 209, 1],
+    ["رکوع کا بیان", 214, 1],
+    ["رکوع کی دعائیں", 215, 1],
+    ["اطمینان، نماز کا رکن ہے", 217, 1],
+    ["قومے کا بیان", 219, 1],
+    ["سجدے کے احکام", 224, 1],
+    ["عورتیں بازو نہ بچھائیں", 227, 1],
+    ["سجدہ، قربِ الٰہی کا باعث", 228, 1],
+    ["سجدہ جنت میں داخلے کا باعث ہے", 229, 1],
+    ["لمبا سجدہ کرنا", 229, 1],
+    ["کثرتِ سجود، بہشت میں رسول اللہ ﷺ کی رفاقت کا باعث", 229, 1],
+    ["سجدے کی دعائیں", 231, 1],
+    ["درمیانی جلسہ (دو سجدوں کے درمیان بیٹھنا)", 234, 1],
+    ["جلسے کی مسنون دعائیں", 235, 1],
+    ["دوسرا سجدہ", 236, 1],
+    ["جلسۂ استراحت", 236, 1],
+    ["دوسری رکعت", 237, 1],
+    ["پہلا تشہد", 237, 1],
+    ["مسئلۂ رفعِ سبابہ", 239, 1],
+    ["آخری قعدہ (تشہد)", 241, 1],
+    ["درود کے بعد کی دعائیں", 244, 1],
+    ["نماز کا اختتام", 246, 1],
+    ["چند مزید احکام", 247, 1],
+    ["سجدۂ سہو کا بیان", 250, 0],
+    ["تین یا چار رکعات کے شک پر سجدہ", 250, 1],
+    ["قعدۂ اولیٰ کے ترک پر سجدہ", 251, 1],
+    ["نماز سے فارغ ہو کر باتیں کر لینے کے بعد سجدہ", 252, 1],
+    ["چار کی جگہ پانچ رکعات پڑھنے پر سجدہ", 252, 1],
+    ["نماز کے بعد مسنون اذکار", 255, 0],
+    ["تنبیہ: دعائے رسول ﷺ میں اضافہ", 255, 1],
+    ["آیۃ الکرسی", 261, 1],
+    ["فرض نماز کے بعد اجتماعی دعا", 263, 1],
+    ["سنتوں کا بیان", 269, 0],
+    ["مؤکدہ سنتیں اور ان کی فضیلت", 269, 1],
+    ["رسول اللہ ﷺ سنتیں گھر میں پڑھتے تھے", 270, 1],
+    ["غیر مؤکدہ سنتیں", 270, 1],
+    ["مغرب سے پہلے دو رکعتیں", 271, 1],
+    ["جمعے کے بعد کی سنتیں", 271, 1],
+    ["فجر کی سنتوں کی فضیلت", 272, 1],
+    ["فجر کی سنتیں فرضوں کے بعد پڑھنے کا جواز", 272, 1],
+    ["نمازوں کی رکعات", 273, 1],
+    ["تہجد، قیام اللیل، قیامِ رمضان اور وتر", 275, 0],
+    ["فضیلت", 275, 1],
+    ["نبیٔ رحمت ﷺ کا شکر کرنے کا انداز", 276, 1],
+    ["نیند سے بیدار ہونے کی دعائیں", 277, 1],
+    ["تہجد کی دعائے استفتاح", 281, 1],
+    ["رسول اللہ ﷺ کی نمازِ تہجد کی کیفیت", 283, 1],
+    ["آپ ﷺ کی تین دعائیں", 285, 1],
+    ["رسول اللہ ﷺ کی نمازِ شب کا معمول", 287, 1],
+    ["قیام اللیل کا طریقہ", 288, 1],
+    ["پانچ، تین اور ایک وتر", 290, 1],
+    ["تین وتروں کی قراءت", 290, 1],
+    ["وتروں کے سلام کے بعد کی دعا", 293, 1],
+    ["دعائے قنوت", 294, 1],
+    ["تنبیہات", 296, 1],
+    ["قنوتِ نازلہ", 297, 1],
+    ["قیامِ رمضان", 298, 1],
+    ["رسول اللہ ﷺ نے تین راتیں باجماعت قیامِ رمضان کیا", 299, 1],
+    ["رمضان میں تہجد اور تراویح ایک ہی نماز ہے", 300, 1],
+    ["قیامِ رمضان: گیارہ رکعات", 301, 1],
+    ["سحری اور نمازِ فجر کا درمیانی وقفہ", 302, 1],
+    ["نمازِ سفر", 303, 0],
+    ["قصر کی حد", 305, 1],
+    ["سفر میں اذان اور جماعت", 306, 1],
+    ["سفر میں دو نمازیں جمع کرنا", 306, 1],
+    ["سفر میں سنتیں معاف ہیں", 307, 1],
+    ["حضر میں دو نمازوں کا جمع کرنا", 308, 1],
+    ["نمازِ جمعہ", 310, 0],
+    ["جمعہ کے دن کی فضیلت", 310, 1],
+    ["جمعہ کی فرضیت", 310, 1],
+    ["جمعے کے متفرق مسائل", 311, 1],
+    ["دورانِ خطبہ دو رکعتیں پڑھ کر بیٹھنا", 316, 1],
+    ["گردنیں پھلانگنے کی ممانعت", 317, 1],
+    ["جمعے کے لیے پہلے آنے والوں کا ثواب", 317, 1],
+    ["خطبۂ جمعہ کے مسائل", 318, 1],
+    ["ظہرِ احتیاطی بدعت ہے", 320, 1],
+    ["محض جمعے کے دن روزہ رکھنا", 320, 1],
+    ["جمعہ کی اذان", 320, 1],
+    ["نمازِ عیدین", 322, 0],
+    ["احکام و مسائل", 322, 1],
+    ["عورتوں کے لیے عیدگاہ میں آنے کا حکم", 324, 1],
+    ["تکبیراتِ عید کا وقت", 325, 1],
+    ["نمازِ عید کا طریقہ", 327, 1],
+    ["عید سے متعلقہ مسائل", 328, 1],
+    ["نمازِ کسوف: سورج اور چاند گرہن کی نماز", 331, 0],
+    ["سورج اور چاند گرہن کی نماز کا طریقہ", 332, 1],
+    ["نمازِ استسقا", 335, 0],
+    ["نمازِ اشراق", 340, 0],
+    ["نمازِ استخارہ کا بیان", 342, 0],
+    ["نمازِ تسبیح", 344, 0],
+    ["احکام الجنائز", 348, 0],
+    ["بیمار پرسی", 348, 1],
+    ["عیادت کی دعائیں", 350, 1],
+    ["تجہیز و تکفین", 355, 0],
+    ["عالمِ نزع میں تلقین", 355, 1],
+    ["موت کی آرزو کرنا", 356, 1],
+    ["خودکشی سخت گناہ ہے", 356, 1],
+    ["میت کو بوسہ دینا", 357, 1],
+    ["میت کا غسل", 357, 1],
+    ["میت کا کفن", 358, 1],
+    ["میت کا سوگ", 358, 1],
+    ["میت پر رونا", 359, 1],
+    ["تعزیت کے مسنون الفاظ", 362, 1],
+    ["نمازِ جنازہ", 363, 0],
+    ["جنازے میں سورۂ فاتحہ", 364, 1],
+    ["پہلی دعا", 364, 1],
+    ["دوسری دعا", 365, 1],
+    ["تیسری دعا", 366, 1],
+    ["جنازے کے مسائل", 366, 1],
+    ["غائبانہ نمازِ جنازہ", 368, 1],
+    ["قبر پر نمازِ جنازہ", 369, 1],
+    ["تدفین و زیارت", 371, 0],
+    ["قبروں کو پختہ بنانے کی ممانعت", 373, 1],
+    ["قبروں کی زیارت", 374, 1],
+    ["زیارتِ قبور کی دعائیں", 375, 1],
+    ["دیگر نمازیں", 377, 0],
+    ["نمازِ توبہ", 377, 1],
+    ["لیلۃ القدر کے نوافل", 377, 1],
+    ["پندرھویں شعبان کے نوافل", 377, 1],
+    ["کلمۂ اختتام", 379, 0]
+  ]
+};
+if (typeof module !== "undefined") module.exports = NAMAZ_BOOK;
+
 </script>
 <script>
 const HERO_IMG = "data:image/webp;base64,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";
@@ -1340,6 +1689,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
         <div class="grid">
           ${tile("tasbeeh", ICON.beads, t("ڈیجیٹل تسبیح", "Digital Tasbeeh"), t("پوری اسکرین کاؤنٹر", "Full-screen counter"), "feature")}
           ${tile("quran", ICON.book, t("قرآن پاک", "Quran Pak"), t("سورتیں، پارے، تلاوت، اردو ترجمہ", "Surahs, Paras, recitation, Urdu"))}
+          ${tile("namaz", ICON.mosque, t("نماز کا طریقہ", "How to Pray"), t("کتاب «نمازِ نبوی ﷺ» — صحیح احادیث کی روشنی میں", "Book «Namaz-e-Nabawi ﷺ» — in the light of authentic hadith"), "wide feature")}
           ${tile("qibla", ICON.compass, t("قبلہ رخ", "Qibla Direction"), t("قطب نما — مفت، آف لائن", "Compass — free, offline"))}
           ${tile("names", ICON.names, t("اللہ کے ۹۹ نام", "99 Names of Allah"), t("اسماء الحسنیٰ، اردو معنی، آواز", "Asma-ul-Husna, Urdu, audio"))}
           ${tile("hadith", ICON.search, t("حدیث تلاش", "Hadith Search"), t("کتبِ حدیث، عربی و اردو", "Hadith books, Arabic & Urdu"))}
@@ -1357,7 +1707,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-mkhome]")) { const m = getMarks()[0]; if (m) openMark(m); } });
   function tile(go, icon, title, sub, cls = "") {
-    if (cls === "wide") return `<button class="tile wide" data-go="${go}"><span class="ic">${icon}</span><span class="grow"><b>${title}</b><br><small>${sub}</small></span></button>`;
+    if (cls.split(" ").includes("wide")) return `<button class="tile ${cls}" data-go="${go}"><span class="ic">${icon}</span><span class="grow"><b>${title}</b><br><small>${sub}</small></span></button>`;
     return `<button class="tile ${cls}" data-go="${go}"><span class="ic">${icon}</span><b>${title}</b><small>${sub}</small></button>`;
   }
 
@@ -2423,6 +2773,162 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     return `\n\n— ${C.appNameUr} | ${C.appName}` + (C.APP_DOWNLOAD_URL ? `\n📥 ${C.APP_DOWNLOAD_NAME || t("ایپ ڈاؤن لوڈ کریں", "Download the app")}:\n${C.APP_DOWNLOAD_URL}` : "");
   }
 
+  /* ================= NAMAZ KA TAREEQA (v1.3.0) =================
+     Book «نمازِ نبوی ﷺ» (Darussalam, jadeed edition) shown as its own scanned pages — nothing retyped.
+     Page images live on our own website (folder namaz/, made by tools/prepare-namaz.py): 8 pages per
+     file, fetched only when needed; the service worker keeps every file once opened (works offline).
+     Table of contents (as printed): src/namaz-data.js. Book page = image number + 1. */
+  const NB = typeof NAMAZ_BOOK !== "undefined" ? NAMAZ_BOOK : null;
+  const NZ_BASE = "namaz/";
+  let nzIndexP = null;
+  const nzFileP = new Map(), nzUrl = new Map();
+  function nzIndex() {
+    if (!nzIndexP) nzIndexP = fetch(NZ_BASE + "index.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .catch((e) => { nzIndexP = null; throw e; });
+    return nzIndexP;
+  }
+  const nzClamp = (bp) => Math.min(NB.lastBookPage, Math.max(NB.firstBookPage, Math.round(+bp || NB.firstBookPage)));
+  async function nzPageUrl(bp) {
+    const img = bp - NB.offset;
+    if (nzUrl.has(img)) return nzUrl.get(img);
+    const idx = await nzIndex();
+    const [fi, off, len] = idx.pages[img - 1];
+    const [name, v] = idx.files[fi];
+    const key = `${name}?v=${v}`;
+    let p = nzFileP.get(key);
+    if (!p) p = fetch(NZ_BASE + key).then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.arrayBuffer(); })
+      .catch((e) => { nzFileP.delete(key); throw e; });
+    nzFileP.delete(key); nzFileP.set(key, p); // most recently used last
+    while (nzFileP.size > 3) nzFileP.delete(nzFileP.keys().next().value);
+    const buf = await p;
+    const url = URL.createObjectURL(new Blob([buf.slice(off, off + len)], { type: "image/webp" }));
+    nzUrl.set(img, url);
+    if (nzUrl.size > 30) for (const [k, u] of nzUrl) if (Math.abs(k - img) > 10) { URL.revokeObjectURL(u); nzUrl.delete(k); }
+    return url;
+  }
+  /* chapter (main heading) and topic that a book page belongs to */
+  function nzWhere(bp) {
+    let ch = null, tp = null;
+    for (const x of NB.toc) { if (x[1] > bp) break; if (x[2] === 0) { ch = x; tp = null; } else tp = x; }
+    return { ch, tp };
+  }
+  const nzNorm = (s) => String(s).replace(/[ً-ٰٟ۪-ۭ‌‍«»()،:؟?.\-]/g, "").replace(/[يى]/g, "ی").replace(/ك/g, "ک").replace(/[ةه]/g, "ہ").replace(/ۂ/g, "ہ").replace(/ۓ/g, "ے").replace(/أ|إ|آ/g, "ا").replace(/\s+/g, " ").trim();
+
+  function screenNamaz() {
+    if (!NB) { view().innerHTML = topbar(t("نماز کا طریقہ", "How to Pray")) + `<div class="view"><div class="notice">${t("کتاب دستیاب نہیں۔", "Book not available.")}</div></div>`; return; }
+    const last = store.get("namaz.last", null);
+    const lw = last ? nzWhere(last.bp) : null;
+    view().innerHTML = topbar(t("نماز کا طریقہ", "How to Pray")) + `<div class="view" id="nzHome">
+      <div class="card nz-book" ${U}>
+        <span class="nz-ic">${ICON.mosque}</span>
+        <div><b class="nz-title">${NB.title}</b><div class="nz-sub">${NB.sub}</div>
+        <div class="small muted nz-credit">${esc(NB.credit)}</div></div>
+      </div>
+      ${last ? `<button class="resume qresume" id="nzCont"><span class="iconbtn" aria-hidden="true">${ICON.book}</span><span class="t"><b>${t("جاری رکھیں", "Continue")} — ${t("صفحہ", "page")} ${N(last.bp)}</b><span ${U}>${esc(lw && lw.ch ? lw.ch[0] : "")}</span></span></button>` : ""}
+      <div class="row">
+        <button class="btn gold grow" id="nzStart">${ICON.book} ${t("کتاب شروع سے پڑھیں", "Read from the start")}</button>
+      </div>
+      <form class="row card nz-find" id="nzPgForm">
+        <label for="nzPg" class="small muted">${t(`صفحہ نمبر (${N(NB.firstBookPage)} تا ${N(NB.lastBookPage)})`, `Page (${NB.firstBookPage}–${NB.lastBookPage})`)}</label>
+        <input id="nzPg" class="input" type="number" inputmode="numeric" min="${NB.firstBookPage}" max="${NB.lastBookPage}" style="max-width:110px">
+        <button class="btn" type="submit">${t("کھولیں", "Open")}</button>
+      </form>
+      <div class="section-label">${t("فہرستِ مضامین — کسی بھی مضمون کو دبائیں، کتاب اسی صفحے پر کھلے گی", "Contents — tap any topic to open the book at that page")}</div>
+      <input id="nzQ" class="input" type="search" placeholder="${t("مضمون تلاش کریں — مثلاً وضو، رفع الیدین، وتر", "Search a topic, e.g. وضو، رفع الیدین، وتر")}" ${U}>
+      <div class="nz-toc" id="nzToc" ${U}></div>
+    </div>`;
+    const draw = (q) => {
+      const nq = nzNorm(q || "");
+      let ch = null;
+      const rows = [];
+      for (const [title, bp, lvl] of NB.toc) {
+        if (lvl === 0) ch = title;
+        if (nq && !nzNorm(title).includes(nq) && !(lvl === 1 && nzNorm(ch).includes(nq))) continue;
+        rows.push(`<button class="nz-row ${lvl === 0 ? "ch" : "tp"}" data-bp="${bp}"><span class="nz-t">${esc(title)}${nq && lvl === 1 ? `<small>${esc(ch)}</small>` : ""}</span><span class="nz-p">${N(bp)}</span></button>`);
+      }
+      $("#nzToc").innerHTML = rows.join("") || `<div class="empty">${t("کوئی مضمون نہیں ملا", "No topic found")}</div>`;
+      $("#nzToc").querySelectorAll("[data-bp]").forEach((b) => b.onclick = () => go("namazpage", { bp: +b.dataset.bp }));
+    };
+    draw("");
+    $("#nzQ").oninput = (e) => draw(e.target.value);
+    $("#nzStart").onclick = () => go("namazpage", { bp: NB.firstBookPage });
+    if ($("#nzCont")) $("#nzCont").onclick = () => go("namazpage", { bp: last.bp });
+    $("#nzPgForm").onsubmit = (e) => {
+      e.preventDefault();
+      const v = +$("#nzPg").value;
+      if (v >= NB.firstBookPage && v <= NB.lastBookPage) go("namazpage", { bp: v });
+      else toast(t(`${N(NB.firstBookPage)} سے ${N(NB.lastBookPage)} تک صفحہ لکھیں`, `Enter a page from ${NB.firstBookPage} to ${NB.lastBookPage}`));
+    };
+  }
+
+  function screenNamazPage(params) {
+    if (!NB) return screenNamaz();
+    // app reopened on this screen (no page given): continue from the last page read
+    const bp = nzClamp(params.bp || (store.get("namaz.last", null) || {}).bp);
+    route.params = { ...params, bp };
+    store.set("namaz.last", { bp, at: Date.now() });
+    const w = nzWhere(bp);
+    const zoom = !!store.get("namaz.zoom", false);
+    const first = NB.firstBookPage, lastP = NB.lastBookPage;
+    const pageLabel = bp - NB.offset <= 4 ? t("ابتدائی صفحات", "Front pages") : `${t("صفحہ", "Page")} ${N(bp)}`;
+    view().innerHTML = topbar(`${t("نمازِ نبوی", "Namaz-e-Nabawi")} · ${pageLabel}`, { right: `<button class="iconbtn" id="nzTocBtn" aria-label="${t("فہرست", "Contents")}">${ICON.scroll}</button>` }) + `
+      <div class="view mview nzview" id="nzv">
+        <div class="nz-where" ${U}>${w.ch ? `<b>${esc(w.ch[0])}</b>` : ""}${w.tp ? ` <span>› ${esc(w.tp[0])}</span>` : ""}</div>
+        <div class="mtools">
+          <button class="chip" id="nzToc2">${ICON.scroll} ${t("فہرست", "Contents")}</button>
+          <button class="chip" id="nzJump">${t("صفحہ بدلیں", "Go to page")}</button>
+          <button class="chip" id="nzZoom" aria-pressed="${zoom}">${t("بڑا کریں", "Zoom")}</button>
+        </div>
+        <div class="nz-pagebox ${zoom ? "zoom" : ""}" id="nzBox"><div class="spinner"></div></div>
+        <div class="mpager">
+          <button class="btn grow" data-nzp="${bp + 1}" ${bp >= lastP ? "disabled" : ""}>${t("← اگلا صفحہ", "Next page →")}</button>
+          <span class="pgno">${N(bp)} / ${N(lastP)}</span>
+          <button class="btn grow" data-nzp="${bp - 1}" ${bp <= first ? "disabled" : ""}>${t("پچھلا صفحہ →", "← Previous page")}</button>
+        </div>
+        <p class="small muted" style="text-align:center;margin:0">${t("صفحہ بدلنے کے لیے دائیں/بائیں سوائپ کریں · «بڑا کریں» سے حروف بڑے ہو جاتے ہیں", "Swipe to turn the page · “Zoom” makes the letters bigger")}</p>
+        <p class="small muted" ${U}>${esc(NB.credit)}</p>
+      </div>`;
+    const turn = (to) => { if (to < first || to > lastP) return; go("namazpage", { bp: to }, false); };
+    document.querySelectorAll("[data-nzp]").forEach((b) => b.onclick = () => turn(+b.dataset.nzp));
+    const toToc = () => { if (historyStack.length && historyStack[historyStack.length - 1].name === "namaz") back(); else go("namaz", {}); };
+    $("#nzTocBtn").onclick = toToc; $("#nzToc2").onclick = toToc;
+    $("#nzZoom").onclick = () => { const z = !store.get("namaz.zoom", false); store.set("namaz.zoom", z); $("#nzBox").classList.toggle("zoom", z); $("#nzZoom").setAttribute("aria-pressed", String(z)); };
+    $("#nzJump").onclick = () => {
+      const sh = openSheet(`<h2>${t("صفحہ نمبر لکھیں", "Enter a page number")}</h2>
+        <form class="row" id="nzJf"><input id="nzJi" class="input grow" type="number" inputmode="numeric" min="${first}" max="${lastP}" value="${bp}" style="max-width:130px"><button class="btn gold" type="submit">${t("کھولیں", "Open")}</button></form>
+        <button class="btn ghost" data-close>${t("بند کریں", "Close")}</button>`);
+      sh.querySelector("#nzJf").onsubmit = (e) => { e.preventDefault(); const v = +sh.querySelector("#nzJi").value; if (v >= first && v <= lastP) { closeSheet(); turn(v); } else toast(t(`${N(first)} سے ${N(lastP)} تک صفحہ لکھیں`, `Enter a page from ${first} to ${lastP}`)); };
+    };
+    let sx = 0, sy = 0;
+    const box = $("#nzv");
+    box.addEventListener("touchstart", (e) => { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    box.addEventListener("touchend", (e) => {
+      if ($("#nzBox") && $("#nzBox").classList.contains("zoom")) return; // zoomed: swipe scrolls the page instead
+      const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) turn(dx > 0 ? bp + 1 : bp - 1);
+    }, { passive: true });
+    drawNamazPage(bp);
+  }
+  async function drawNamazPage(bp) {
+    const boxEl = $("#nzBox");
+    try {
+      const idx = await nzIndex();
+      const h = idx.pages[bp - NB.offset - 1][3];
+      if (boxEl.isConnected) boxEl.style.aspectRatio = `${idx.width} / ${h}`;
+      const url = await nzPageUrl(bp);
+      if (route.name !== "namazpage" || route.params.bp !== bp || !boxEl.isConnected) return;
+      boxEl.innerHTML = `<img id="nzImg" src="${url}" alt="${esc(t(`نمازِ نبوی، صفحہ ${N(bp)}`, `Namaz-e-Nabawi, page ${bp}`))}" decoding="async">`;
+      // get the next and previous pages ready so turning is instant
+      [bp + 1, bp - 1].filter((x) => x >= NB.firstBookPage && x <= NB.lastBookPage).forEach((x) => nzPageUrl(x).catch(() => {}));
+    } catch (e) {
+      if (!boxEl.isConnected) return;
+      boxEl.style.aspectRatio = "";
+      boxEl.innerHTML = `<div class="notice"><b>${t("صفحہ لوڈ نہیں ہو سکا۔", "Couldn't load the page.")}</b><br>${t("انٹرنیٹ کنکشن چیک کریں۔ جو صفحے ایک بار کھل جائیں، وہ بعد میں بغیر انٹرنیٹ کے بھی کھلتے ہیں۔", "Check your internet connection. Pages opened once also open later without internet.")}
+        <div style="margin-top:8px"><button class="btn" id="nzRetry">${t("دوبارہ کوشش کریں", "Try again")}</button></div></div>`;
+      $("#nzRetry").onclick = () => { boxEl.innerHTML = '<div class="spinner"></div>'; drawNamazPage(bp); };
+    }
+  }
+
   /* ================= HADITH ================= */
   const BOOKS = [
     { id: "bukhari", ur: "صحیح البخاری", en: "Sahih al-Bukhari", std: true },
@@ -3369,7 +3875,8 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
     hadith: screenHadith, hsection: screenHSection, daily: screenDaily,
     "azkar-morning": () => screenAzkar("morning"), "azkar-evening": () => screenAzkar("evening"),
     "azkar-prayer": () => screenAzkar("prayer"), saved: screenSaved, about: screenAbout,
-    mushaf: screenMushaf, qibla: screenQibla, names: screenNames
+    mushaf: screenMushaf, qibla: screenQibla, names: screenNames,
+    namaz: screenNamaz, namazpage: screenNamazPage
   };
   document.addEventListener("click", (e) => {
     const l = e.target.closest("[data-lang]");
@@ -3422,6 +3929,12 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
       else if (e.key === "ArrowRight" && pg > 1) { e.preventDefault(); go("mushaf", { page: pg - 1 }, false); }
       return;
     }
+    if (route.name === "namazpage" && NB && !$("#overlay") && !(document.activeElement && document.activeElement.tagName === "INPUT")) {
+      const bp = route.params.bp || NB.firstBookPage;
+      if (e.key === "ArrowLeft" && bp < NB.lastBookPage) { e.preventDefault(); go("namazpage", { bp: bp + 1 }, false); }
+      else if (e.key === "ArrowRight" && bp > NB.firstBookPage) { e.preventDefault(); go("namazpage", { bp: bp - 1 }, false); }
+      return;
+    }
     if (route.name !== "tasbeeh" || $("#overlay")) return;
     const a = document.activeElement;
     if (a && (a.id === "tsbName" || a.tagName === "INPUT" || a.tagName === "TEXTAREA")) return;
@@ -3450,6 +3963,7 @@ const HERO_IMG = "data:image/webp;base64,UklGRtRUAABXRUJQVlA4IMhUAAAw7wGdASogA/E
   go(SCREENS[start] && !["surah", "hsection"].includes(start) ? start : "home", {}, false);
   stats.platformOncePerDay();
   window.__NT.player = player;
+  window.__NT.nzPageUrl = nzPageUrl;
   // APK: recitation still running in the background (e.g. the app was closed and opened again) — show where it is
   if (player.native) {
     try {
